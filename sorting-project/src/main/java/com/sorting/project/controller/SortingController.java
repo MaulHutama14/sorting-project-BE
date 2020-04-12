@@ -30,9 +30,7 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 /**
  *
@@ -182,6 +180,8 @@ public class SortingController {
 
                 akanDiAssign.setSortId(i);
 
+                akanDiAssign.setIsProses(false);
+
                 temp = tanggalMaster.get(0).getTanggalAlat();
 
                 this.mtaService.saveOne(tanggalMaster.get(0));
@@ -201,89 +201,159 @@ public class SortingController {
             return new ResponseEntity<>(result, HttpStatus.OK);
         }
 
-//        List<String> prosesDitarik = this.prosesKomponenService.findByHasilSorting();
-//
-//        Calendar input = Calendar.getInstance();
-//        input.set(2020, 1, 20, 8, 0, 0);
-//        Long temp = (long) 0;
-//
-//        for (int z = 0; z < prosesDitarik.size(); z++) {
-//            List<ProsesKomponen> akanDiTarik = this.prosesKomponenService.findByProsesAndSortByIdPorses(prosesDitarik.get(z), "");
-//
-//            for (int j = 0; j < akanDiTarik.size(); j++) {
-//                if (z == 0 && j == 0) {
-//                    Long diff = akanDiTarik.get(j).getAssignDate().getTime() - input.getTime().getTime();
-//                    Long diffDays = diff / (24 * 60 * 60 * 1000);
-//
+        List<String> prosesDitarik = this.prosesKomponenService.findSortByKomponenAndProses();
+        Date dt = new Date();
+        Calendar c = Calendar.getInstance();
+        c.setTime(dt);
+        c.set(Calendar.HOUR, 8);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        c.add(Calendar.DATE, 1);
+        dt = c.getTime();
+        Date temp = new Date();
+        Map<String, Date> waktuProduk = new HashMap<>();
+        Long diff;
+        Long diffDays;
+        Long diffSeconds;
+        Long diffMinutes;
+        Long diffHours;
+        for (int z = 0; z < prosesDitarik.size(); z++) {
+            List<ProsesKomponen> akanDiTarik = this.prosesKomponenService.findByProsesAndSortByIdPorses(prosesDitarik.get(z), "");
+            for (int j = 0; j < akanDiTarik.size(); j++) {
+                if (z == 0 && j == 0){
+                    diff = akanDiTarik.get(j).getAssignDate().getTime() - dt.getTime();
+//                    diffDays = diff / (24 * 60 * 60 * 1000);
+                    diffSeconds = diff / 1000 % 60;
+                    diffMinutes = diff / (60 * 1000) % 60;
+                    diffHours = diff / (60 * 60 * 1000);
+
 //                    akanDiTarik.get(j).setAssignDate(
 //                            this.dateManipulator.addDays(akanDiTarik.get(j).getAssignDate(), -diffDays.intValue()));
 //                    akanDiTarik.get(j).setAssignEnd(
 //                            this.dateManipulator.addDays(akanDiTarik.get(j).getAssignEnd(), -diffDays.intValue()));
-//                } else if (j > 0) {
-//                    Long diff = akanDiTarik.get(j).getAssignDate().getTime() - akanDiTarik.get(j - 1).getAssignDate().getTime();
-//                    Long diffDays = diff / (24 * 60 * 60 * 1000);
-//
+                    akanDiTarik.get(j).setAssignDate(
+                            this.dateManipulator.addHours(akanDiTarik.get(j).getAssignDate(), -diffHours.intValue()));
+                    akanDiTarik.get(j).setAssignEnd(
+                            this.dateManipulator.addHours(akanDiTarik.get(j).getAssignEnd(), -diffHours.intValue()));
+                    akanDiTarik.get(j).setAssignDate(
+                            this.dateManipulator.addMinutes(akanDiTarik.get(j).getAssignDate(), -diffMinutes.intValue()));
+                    akanDiTarik.get(j).setAssignEnd(
+                            this.dateManipulator.addMinutes(akanDiTarik.get(j).getAssignEnd(), -diffMinutes.intValue()));
+                    akanDiTarik.get(j).setAssignDate(
+                            this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignDate(), -diffSeconds.intValue()));
+                    akanDiTarik.get(j).setAssignEnd(
+                            this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignEnd(), -diffSeconds.intValue()));
+
+                } else if (j > 0) {
+                    if (waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()) != null
+                    && waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()).after(akanDiTarik.get(j - 1).getAssignEnd())) {
+                        diff = akanDiTarik.get(j).getAssignDate().getTime() - waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()).getTime();
+                    } else {
+                        diff = akanDiTarik.get(j).getAssignDate().getTime() - akanDiTarik.get(j - 1).getAssignEnd().getTime();
+                    }
+//                    diffDays = diff / (24 * 60 * 60 * 1000);
+                    diffSeconds = diff / 1000 % 60;
+                    diffMinutes = diff / (60 * 1000) % 60;
+                    diffHours = diff / (60 * 60 * 1000);
+
 //                    akanDiTarik.get(j).setAssignDate(
 //                            this.dateManipulator.addDays(akanDiTarik.get(j).getAssignDate(), -diffDays.intValue()));
 //                    akanDiTarik.get(j).setAssignEnd(
 //                            this.dateManipulator.addDays(akanDiTarik.get(j).getAssignEnd(), -diffDays.intValue()));
-//
-//                    if (j == akanDiTarik.size() - 1) {
-//                        temp = akanDiTarik.get(j).getAssignDate().getTime();
-//                    }
-//
-//                } else if (z != 0 && j == 0) {
-//                    
-//                    Long diff = akanDiTarik.get(j).getAssignDate().getTime() - temp;
-//                    Long diffDays = diff / (24 * 60 * 60 * 1000);
-//
+                    akanDiTarik.get(j).setAssignDate(
+                            this.dateManipulator.addHours(akanDiTarik.get(j).getAssignDate(), -diffHours.intValue()));
+                    akanDiTarik.get(j).setAssignEnd(
+                            this.dateManipulator.addHours(akanDiTarik.get(j).getAssignEnd(), -diffHours.intValue()));
+                    akanDiTarik.get(j).setAssignDate(
+                            this.dateManipulator.addMinutes(akanDiTarik.get(j).getAssignDate(), -diffMinutes.intValue()));
+                    akanDiTarik.get(j).setAssignEnd(
+                            this.dateManipulator.addMinutes(akanDiTarik.get(j).getAssignEnd(), -diffMinutes.intValue()));
+                    akanDiTarik.get(j).setAssignDate(
+                            this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignDate(), -diffSeconds.intValue()));
+                    akanDiTarik.get(j).setAssignEnd(
+                            this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignEnd(), -diffSeconds.intValue()));
+
+                    if (j == akanDiTarik.size() - 1) {
+                        temp = akanDiTarik.get(j).getAssignEnd();
+                    }
+
+                } else if (z != 0 && j == 0) {
+                    if (waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()) != null
+                            && waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()).after(temp)) {
+                        diff = akanDiTarik.get(j).getAssignDate().getTime() - waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()).getTime();
+                    } else if (waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()) == null
+                            && akanDiTarik.get(j).getProses().getSortId()==1){
+                        diff = akanDiTarik.get(j).getAssignDate().getTime() - dt.getTime();
+                    } else {
+                        diff = akanDiTarik.get(j).getAssignDate().getTime() - temp.getTime();
+                    }
+//                    diffDays = diff / (24 * 60 * 60 * 1000);
+                    diffSeconds = diff / 1000 % 60;
+                    diffMinutes = diff / (60 * 1000) % 60;
+                    diffHours = diff / (60 * 60 * 1000);
+
 //                    akanDiTarik.get(j).setAssignDate(
 //                            this.dateManipulator.addDays(akanDiTarik.get(j).getAssignDate(), -diffDays.intValue()));
 //                    akanDiTarik.get(j).setAssignEnd(
 //                            this.dateManipulator.addDays(akanDiTarik.get(j).getAssignEnd(), -diffDays.intValue()));
-//                }
-//                
-//            }
-//
-//            this.prosesKomponenService.saveAll(akanDiTarik);
-//            
-//        }
-//            
-//            System.out.println("nama produk " + namaProduk.get(z));
-//
-//            prosesDitarik = this.prosesKomponenService.findProsesTerakhir(namaProduk.get(z));
-//
-//            if (z != 0) {
-//
-//                List<ProsesKomponen> prosesSebelumnya = this.prosesKomponenService.findProsesTerakhir(namaProduk.get(z - 1));
-//                Long diff = prosesDitarik.get(prosesDitarik.size() - 1).getAssignDate().getTime() - prosesSebelumnya.get(prosesSebelumnya.size() - 1).getAssignDate().getTime();
-//                Long diffDays = diff / (24 * 60 * 60 * 1000);
-//
-//                for (int aa = 0; aa < prosesDitarik.size(); aa++) {
-//
-//                   prosesDitarik.get(aa).setAssignDate(
-//                            this.dateManipulator.addDays(prosesDitarik.get(aa).getAssignDate(), -diffDays.intValue()));
-//                    prosesDitarik.get(aa).setAssignEnd(
-//                            this.dateManipulator.addDays(prosesDitarik.get(aa).getAssignEnd(), -diffDays.intValue()));
-//
-//                }
-//
-//            } else {
-//                Long diff = prosesDitarik.get(prosesDitarik.size() - 1).getAssignDate().getTime() - input.getTime().getTime();
-//                Long diffDays = diff / (24 * 60 * 60 * 1000);
-//                for (int aa = 0; aa < prosesDitarik.size(); aa++) {
-//
-//                    prosesDitarik.get(aa).setAssignDate(
-//                            this.dateManipulator.addDays(prosesDitarik.get(aa).getAssignDate(), -diffDays.intValue()));
-//                    prosesDitarik.get(aa).setAssignEnd(
-//                            this.dateManipulator.addDays(prosesDitarik.get(aa).getAssignEnd(), -diffDays.intValue()));
-//
-//
-//                }
-//            }
-//            
-//            this.prosesKomponenService.saveAll(prosesDitarik);
-//        }
+                    akanDiTarik.get(j).setAssignDate(
+                            this.dateManipulator.addHours(akanDiTarik.get(j).getAssignDate(), -diffHours.intValue()));
+                    akanDiTarik.get(j).setAssignEnd(
+                            this.dateManipulator.addHours(akanDiTarik.get(j).getAssignEnd(), -diffHours.intValue()));
+                    akanDiTarik.get(j).setAssignDate(
+                            this.dateManipulator.addMinutes(akanDiTarik.get(j).getAssignDate(), -diffMinutes.intValue()));
+                    akanDiTarik.get(j).setAssignEnd(
+                            this.dateManipulator.addMinutes(akanDiTarik.get(j).getAssignEnd(), -diffMinutes.intValue()));
+                    akanDiTarik.get(j).setAssignDate(
+                            this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignDate(), -diffSeconds.intValue()));
+                    akanDiTarik.get(j).setAssignEnd(
+                            this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignEnd(), -diffSeconds.intValue()));
+
+                }
+                waktuProduk.put(akanDiTarik.get(j).getAlat().getNamaAlat(), akanDiTarik.get(j).getAssignEnd());
+
+
+            }
+
+            this.prosesKomponenService.saveAll(akanDiTarik);
+
+        }
+
+     /*       System.out.println("nama produk " + namaProduk.get(z));
+
+            prosesDitarik = this.prosesKomponenService.findProsesTerakhir(namaProduk.get(z));
+
+            if (z != 0) {
+
+                List<ProsesKomponen> prosesSebelumnya = this.prosesKomponenService.findProsesTerakhir(namaProduk.get(z - 1));
+                Long diff = prosesDitarik.get(prosesDitarik.size() - 1).getAssignDate().getTime() - prosesSebelumnya.get(prosesSebelumnya.size() - 1).getAssignDate().getTime();
+                Long diffDays = diff / (24 * 60 * 60 * 1000);
+
+                for (int aa = 0; aa < prosesDitarik.size(); aa++) {
+
+                   prosesDitarik.get(aa).setAssignDate(
+                            this.dateManipulator.addDays(prosesDitarik.get(aa).getAssignDate(), -diffDays.intValue()));
+                    prosesDitarik.get(aa).setAssignEnd(
+                            this.dateManipulator.addDays(prosesDitarik.get(aa).getAssignEnd(), -diffDays.intValue()));
+
+                }
+
+            } else {
+                Long diff = prosesDitarik.get(prosesDitarik.size() - 1).getAssignDate().getTime() - input.getTime().getTime();
+                Long diffDays = diff / (24 * 60 * 60 * 1000);
+                for (int aa = 0; aa < prosesDitarik.size(); aa++) {
+
+                    prosesDitarik.get(aa).setAssignDate(
+                            this.dateManipulator.addDays(prosesDitarik.get(aa).getAssignDate(), -diffDays.intValue()));
+                    prosesDitarik.get(aa).setAssignEnd(
+                            this.dateManipulator.addDays(prosesDitarik.get(aa).getAssignEnd(), -diffDays.intValue()));
+
+
+                }
+            }
+
+            this.prosesKomponenService.saveAll(prosesDitarik);
+        }*/
 
         System.out.println("=====================\n"
                 + "     JOB DONE \n"
@@ -295,12 +365,60 @@ public class SortingController {
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
     
-    @GetMapping("/getSorting")
-    public ResponseEntity<Map<String, Object>> getSorting() {
+    @RequestMapping("/getSorting")
+    public ResponseEntity<Map<String, Object>> getSorting(@RequestBody Map<String, Object> request) {
          Map<String, Object> result = new HashMap<>();
-         try {
-             List<ProsesKomponen> item = prosesKomponenService.findByHasilSorting();
+         List<Map<String, Object>> resource = new ArrayList<>();
+         List<Map<String, Object>> event = new ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        try {
+             Boolean status = (Boolean) request.get("status");
+             /*Date start = new SimpleDateFormat( "yyyy-MM-dd").parse(request.get("start").toString());
+             Date end = new SimpleDateFormat( "yyyy-MM-dd").parse(request.get("end").toString());*/
+             String start =request.get("start").toString();
+             String end = request.get("end").toString();
+             List<Object[]> produk = prosesKomponenService.findProdukDistinct(status, start, end);
+             List<ProsesKomponen> item = prosesKomponenService.findByHasilSorting(status, start, end);
+             int id = 1;
+            ProsesKomponen temp = null;
+             for (int i = 0; i < produk.size(); i++) {
+                 List<Map<String, Object>> children = new ArrayList<>();
+                 for (ProsesKomponen prosesKomp : item) {
+                     if (prosesKomp.getKomponen().getProduk().getNamaProduk().equalsIgnoreCase(produk.get(i)[0].toString())){
+                         if ((temp != null && !temp.getKomponen().getNamaKomponen().equalsIgnoreCase(
+                                 prosesKomp.getKomponen().getNamaKomponen())) || id == 1 ) {
+                             Map<String, Object> newItem = new HashMap<>();
+                             newItem.put("name",prosesKomp.getKomponen().getNamaKomponen());
+                             newItem.put("id",prosesKomp.getKomponen().getNamaKomponen());
+                             children.add(newItem);
+                         }
+
+
+                         Map<String, Object> newEvent = new HashMap<>();
+                         newEvent.put("resource",prosesKomp.getKomponen().getNamaKomponen());
+                         newEvent.put("id",id);
+                         newEvent.put("start",sdf.format(prosesKomp.getAssignDate()));
+                         newEvent.put("end",sdf.format(prosesKomp.getAssignEnd()));
+                         newEvent.put("text",prosesKomp.getAlat().getNamaAlat());
+                         newEvent.put("color","#e69138");
+                         event.add(newEvent);
+
+                         id++;
+                         temp = prosesKomp;
+
+                     }
+                 }
+                 Map<String, Object> newResource = new HashMap<>();
+                 newResource.put("children",children);
+                 newResource.put("name",produk.get(i)[0]);
+                 newResource.put("id",produk.get(i)[0]);
+                 newResource.put("expanded",true);
+                 resource.add(newResource);
+             }
+
              result.put("hasilSorting", item);
+             result.put("resource", resource);
+             result.put("events", event);
              result.put("message", "Berhasil mendapatkan hasil sorting!");
          } catch (Exception e) {
              e.printStackTrace();

@@ -1,0 +1,8 @@
+1. Produk > Komponen > Bisa tambah/non aktifkan komponen
+2. Bisa upload komponen
+3. Tambah/non-aktifkan produk
+
+BPB : 4
+RB : 3
+HB : 2
+SGC : 4

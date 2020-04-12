@@ -61,6 +61,17 @@ public class ProsesKomponen {
     @Column(name = "SORT_ID")
     private Integer sortId;
 
+    @Column(name = "IS_PROSES")
+    private Boolean isProses;
+
+    public void setIsProses(Boolean proses) {
+        isProses = proses;
+    }
+
+    public Boolean getIsProses() {
+        return isProses;
+    }
+
     public Date getAssignEnd() {
         return assignEnd;
     }

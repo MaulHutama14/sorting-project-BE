@@ -7,6 +7,8 @@ package com.sorting.project.service;
 
 import com.sorting.project.model.ProsesKomponen;
 import com.sorting.project.repo.ProsesKomponenRepo;
+
+import java.util.Date;
 import java.util.List;
 import javax.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +31,11 @@ public class ProsesKomponenService {
     public List<ProsesKomponen> findByProsesAndSortByIdPorses (String idProses, String orderBy){
         return this.prosesKomponenRepo.findByProsesAndSortByIdPorses(idProses, orderBy);
     }
- 
+
+    public List<String> findSortByKomponenAndProses () {
+        return this.prosesKomponenRepo.findSortByKomponenAndProses();
+    }
+
     @Transactional
     public void saveAll (List<ProsesKomponen> prosesKompList){
         this.prosesKomponenRepo.saveAll(prosesKompList);
@@ -53,8 +59,12 @@ public class ProsesKomponenService {
         return this.prosesKomponenRepo.findProsesTerakhir(namaProduk);
     }
     
-    public List<ProsesKomponen> findByHasilSorting(){
-        return this.prosesKomponenRepo.findByHasilSorting();
+    public List<ProsesKomponen> findByHasilSorting(Boolean status, String start, String end){
+        return this.prosesKomponenRepo.findByHasilSorting(status, start,  end);
+    };
+
+    public List<Object[]> findProdukDistinct(Boolean status, String start, String end){
+        return this.prosesKomponenRepo.findProdukDistinct(status, start,  end);
     };
     
     
