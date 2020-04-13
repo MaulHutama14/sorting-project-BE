@@ -21,7 +21,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Integer>{
     
-    @Query("SELECT tpk FROM ProsesKomponen tpk GROUP BY tpk.komponen.namaKomponen \n"
+    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.isAktif=1 GROUP BY tpk.komponen.namaKomponen \n"
             + "ORDER BY tpk.komponen.produk.tanggalAkhir ASC, tpk.komponen.prioritas ASC, tpk.komponen.durasiPengerjaan DESC, COUNT(tpk) DESC, tpk.komponen.namaKomponen ASC")
     List<ProsesKomponen> findCuttingByDeadlinePriorWaktuJumProsNama();
     

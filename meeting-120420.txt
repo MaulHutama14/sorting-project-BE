@@ -6,3 +6,6 @@ BPB : 4
 RB : 3
 HB : 2
 SGC : 4
+
+
+Ada sorting satunya lagi untuk sorting berdasarkan nesting setelah sorting pertama

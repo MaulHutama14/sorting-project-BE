@@ -53,6 +53,24 @@ public class Komponen implements Serializable{
     @Column(name = "UKURAN", nullable = false)
     private Integer ukuran;
 
+
+    @Column(name = "CREATED_ON", nullable = false)
+    private Date createdOn;
+
+    @Column(name = "MODIFIED_ON")
+    private Date modifiedOn;
+
+    @JoinColumn(name = "CREATED_BY", referencedColumnName = "USER_NAME", nullable = false)
+    @ManyToOne
+    private User createdBy;
+
+    @JoinColumn(name = "MODIFIED_BY", referencedColumnName = "USER_NAME")
+    @ManyToOne
+    private User modifiedBy;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isAktif;
+
     public Integer getId() {
         return id;
     }
@@ -116,7 +134,44 @@ public class Komponen implements Serializable{
     public void setNamaBagian(String namaBagian) {
         this.namaBagian = namaBagian;
     }
-    
-    
-    
+
+    public Date getCreatedOn() {
+        return createdOn;
+    }
+
+    public void setCreatedOn(Date createdOn) {
+        this.createdOn = createdOn;
+    }
+
+    public Date getModifiedOn() {
+        return modifiedOn;
+    }
+
+    public void setModifiedOn(Date modifiedOn) {
+        this.modifiedOn = modifiedOn;
+    }
+
+    public User getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(User createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public User getModifiedBy() {
+        return modifiedBy;
+    }
+
+    public void setModifiedBy(User modifiedBy) {
+        this.modifiedBy = modifiedBy;
+    }
+
+    public Boolean getAktif() {
+        return isAktif;
+    }
+
+    public void setAktif(Boolean aktif) {
+        isAktif = aktif;
+    }
 }
