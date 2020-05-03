@@ -13,6 +13,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
+
 /**
  *
  * @author PROSIA
@@ -25,6 +27,15 @@ public class KomponenService {
 
     public List<Komponen> findAll() {
         return this.komponenRepo.findAll();
+    }
+
+    @Transactional
+    public void save(Komponen komponen) {
+        this.komponenRepo.save(komponen);
+    }
+
+    public Komponen findOneById(String id) {
+        return this.komponenRepo.findOneById(id);
     }
 
     public List<Komponen> findSortedByPrioritas(List<Order> orderList) {

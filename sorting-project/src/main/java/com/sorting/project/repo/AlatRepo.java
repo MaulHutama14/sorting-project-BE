@@ -19,16 +19,19 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AlatRepo extends JpaRepository<Alat, Integer> {
 
-    @Query("SELECT a FROM Alat a WHERE a.masterAlat.proses.id = ?1 AND a.tanggalAssign IS NULL"
+    @Query("SELECT a FROM Alat a WHERE a.masterAlat.proses.id = ?1 AND a.tanggalAssign IS NULL AND a.status = 1"
             + " ORDER BY a.tanggalAssign ASC, a.workLoad ASC")
     List<Alat> findOneByMasterDescIsNull(String idProses);
     
-    @Query("SELECT a FROM Alat a WHERE a.masterAlat.proses.id = ?1 AND a.tanggalAssign IS NOT NULL"
+    @Query("SELECT a FROM Alat a WHERE a.masterAlat.proses.id = ?1 AND a.tanggalAssign IS NOT NULL AND a.status = 1"
             + " ORDER BY a.tanggalAssign DESC, a.workLoad ASC")
     List<Alat> findOneByMasterDescIsNotNull(String idProses);
 
     @Modifying
     @Query("UPDATE Alat a SET a.tanggalAssign=null, a.workLoad=0")
     int refreshAlat();
+
+    @Query("SELECT a FROM Alat a WHERE a.namaAlat = ?1")
+    Alat findByNamaAlat (String namaAlat);
 
 }

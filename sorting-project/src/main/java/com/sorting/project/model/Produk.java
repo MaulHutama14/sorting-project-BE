@@ -8,6 +8,7 @@ package com.sorting.project.model;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.UUID;
 import javax.persistence.*;
 
 /**
@@ -17,11 +18,18 @@ import javax.persistence.*;
 @Entity
 @Table(name = "TX_PRODUK")
 public class Produk implements Serializable{
-    
+
+    public Produk() {
+        this.id = UUID.randomUUID().toString();
+        this.createdOn = new Date();
+    }
+
     @Id
     @Column(name = "ID")
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
+    private String id;
+
+    @Column(name = "KUANTITAS")
+    private Integer kuantitas;
     
     @Column(name = "NAMA_PRODUK", length = 50)
     private String namaProduk;
@@ -42,14 +50,20 @@ public class Produk implements Serializable{
     @JoinColumn(name = "MODIFIED_BY", referencedColumnName = "USER_NAME")
     @ManyToOne
     private User modifiedBy;
-    
+
+    @Column(name = "STATUS_PRODUK")
+    private Boolean statusProduk;
+
+    @Column(name = "STATUS_PENGERJAAN")
+    private Boolean statusPengerjaan;
+
     private String tanggalAkhirStr;
 
-    public Integer getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -112,5 +126,29 @@ public class Produk implements Serializable{
 
     public void setModifiedBy(User modifiedBy) {
         this.modifiedBy = modifiedBy;
+    }
+
+    public Integer getKuantitas() {
+        return kuantitas;
+    }
+
+    public void setKuantitas(Integer kuantitas) {
+        this.kuantitas = kuantitas;
+    }
+
+    public Boolean getStatusProduk() {
+        return statusProduk;
+    }
+
+    public void setStatusProduk(Boolean statusProduk) {
+        this.statusProduk = statusProduk;
+    }
+
+    public Boolean getStatusPengerjaan() {
+        return statusPengerjaan;
+    }
+
+    public void setStatusPengerjaan(Boolean statusPengerjaan) {
+        this.statusPengerjaan = statusPengerjaan;
     }
 }

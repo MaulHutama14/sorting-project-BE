@@ -25,11 +25,14 @@ public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Intege
             + "ORDER BY tpk.komponen.produk.tanggalAkhir ASC, tpk.komponen.prioritas ASC, tpk.komponen.durasiPengerjaan DESC, COUNT(tpk) DESC, tpk.komponen.namaKomponen ASC")
     List<ProsesKomponen> findCuttingByDeadlinePriorWaktuJumProsNama();
     
-    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.namaKomponen=?1 ORDER BY tpk.proses.sortId ASC")
+    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.namaKomponen=?1 AND tpk.komponen.isAktif=1 ORDER BY tpk.proses.sortId ASC")
     List<ProsesKomponen> findByProsesAndSortByIdPorses (String idProses, String orderBy);
 
-    @Query("SELECT DISTINCT tpk.komponen.namaKomponen FROM ProsesKomponen tpk  ORDER BY tpk.sortId ASC, tpk.proses.sortId ASC")
-    List<String> findSortByKomponenAndProses ();
+    @Query("SELECT DISTINCT tpk.komponen.namaKomponen FROM ProsesKomponen tpk  ORDER BY tpk.komponen.prioritasNest ASC, tpk.komponen.prioritas ASC")
+    List<Object[]> findSortByNest ();
+
+    @Query("SELECT DISTINCT tpk.komponen.namaKomponen FROM ProsesKomponen tpk WHERE tpk.komponen.isAktif=1 ORDER BY tpk.sortId ASC, tpk.proses.sortId ASC")
+    List<Object[]> findSortByKomponenAndProses ();
     
     @Modifying
     @Query("UPDATE ProsesKomponen tpk SET tpk.assignDate=null, tpk.assignDateStr=null,tpk.assignEnd=null, tpk.assignEndStr=null, tpk.alat=null")
@@ -50,5 +53,12 @@ public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Intege
             " AND (DATE_FORMAT(tpk.assignDate, '%Y-%m-%d') = ?2 " +
             " OR DATE_FORMAT(tpk.assignEnd, '%Y-%m-%d') = ?3 ) ORDER BY  tpk.sortId ASC")
     List<Object[]> findProdukDistinct(Boolean status, String start, String end);
-    
+
+    @Query("SELECT tpk FROM ProsesKomponen tpk\n" +
+            "WHERE tpk.komponen.produk.namaProduk=?1 \n" +
+            "ORDER BY tpk.sortId ASC, tpk.proses.sortId ASC")
+    List<ProsesKomponen> findByProduk(String namaProduk);
+
+    @Query("SELECT u FROM ProsesKomponen u WHERE u.id=?1")
+    public ProsesKomponen findOneById (String id);
 }

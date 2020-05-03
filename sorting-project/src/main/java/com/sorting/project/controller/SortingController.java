@@ -5,13 +5,12 @@
  */
 package com.sorting.project.controller;
 
-import com.sorting.project.model.Alat;
-import com.sorting.project.model.Komponen;
-import com.sorting.project.model.MasterAlat;
-import com.sorting.project.model.ProsesKomponen;
+import com.sorting.project.model.*;
 import com.sorting.project.model.master.MasterTanggalAlat;
+import com.sorting.project.model.master.TanggalLibur;
 import com.sorting.project.model.util.DateManipulator;
 import com.sorting.project.service.AlatService;
+import com.sorting.project.service.AppSettingService;
 import com.sorting.project.service.KomponenService;
 import com.sorting.project.service.ProsesKomponenService;
 import com.sorting.project.service.master.MasterTanggalAlatService;
@@ -53,32 +52,90 @@ public class SortingController {
     @Autowired
     private AlatService alatService;
 
+    @Autowired
+    private AppSettingService appSettingService;
+
     /*
      *   com.sorting.project.model.util
      */
     private DateManipulator dateManipulator = new DateManipulator();
 
+    @RequestMapping("/backup")
+    public ResponseEntity<Map<String, Object>> doBackup() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+           List<Object> responService =  this.prosesKomponenService.saveBackUp();
+           if ((boolean) responService.get(0)) {
+               result.put("message","Berhasil backup data!");
+           } else {
+               result.put("message","Gagal backup data!");
+           }
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("result",false);
+            result.put("message","Terjadi kesalahan!");
+            return  new ResponseEntity<>(result,HttpStatus.EXPECTATION_FAILED);
+        }
+        result.put("true",true);
+        return new ResponseEntity<>(result,HttpStatus.OK);
+    }
+
+    @RequestMapping("/restore")
+    public ResponseEntity<Map<String, Object>> getBackup() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            List<Object> responService =  this.prosesKomponenService.restore();
+            if ((boolean) responService.get(0)) {
+                result.put("message",responService);
+            } else {
+                result.put("message","Gagal backup data!");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("result",false);
+            result.put("message","Terjadi kesalahan!");
+            return  new ResponseEntity<>(result,HttpStatus.EXPECTATION_FAILED);
+        }
+        result.put("true",true);
+        return new ResponseEntity<>(result,HttpStatus.OK);
+    }
+
     @RequestMapping("/doSorting")
-    public ResponseEntity<Map<String, Object>> doSorting() throws ParseException {
+    public ResponseEntity<Map<String, Object>> doSorting(@RequestBody Map<String, Object> request) throws ParseException {
         Map<String, Object> result = new HashMap<>();
         List<ProsesKomponen> prosesKomponenList = new ArrayList<>();
         Boolean success = true;
         List<ProsesKomponen> listProsesSave = new ArrayList<>();
-
+        List<TanggalLibur> tglLiburList;
+        Date minDate = new Date();
+        boolean is2shift = true;
+        
         try {
             this.refreshMasterAlatDanSort();
+            AppSetting app = appSettingService.findById("DOUBLE_SHIFT");
+            is2shift = app.getAppValue().equalsIgnoreCase("1") ? true : false;
         } catch (Exception e) {
             success = false;
             e.printStackTrace();
-            result.put("success", success);
+            result.put("message","Gagal refresh ulang alat!");
+            result.put("success", false);
             return new ResponseEntity<>(result, HttpStatus.OK);
         }
 
         try {
             prosesKomponenList = this.prosesKomponenService.findCuttingByDeadlinePriorWaktuJumProsNama();
+            tglLiburList = this.prosesKomponenService.findAllLibur();
+            if (prosesKomponenList.size() == 0) {
+                result.put("message","Tidak ada komponen untuk diproses!");
+                result.put("success", false);
+                return new ResponseEntity<>(result, HttpStatus.OK);
+            }
         } catch (Exception e) {
             e.printStackTrace();
-            prosesKomponenList = null;
+            result.put("message","Gagal mendapatkan komponen untuk diproses!");
+            result.put("success", false);
+            return new ResponseEntity<>(result, HttpStatus.OK);
+
         }
 
         int i = prosesKomponenList.size() - 1;
@@ -92,9 +149,21 @@ public class SortingController {
             for (int j = listKomponenDiSortir.size() - 1; j >= 0; j--) {
                 ProsesKomponen akanDiAssign = listKomponenDiSortir.get(j);
                 List<MasterTanggalAlat> tanggalMaster = new ArrayList<>();
-                Alat alat = this.findAvailableAlat(akanDiAssign.getProses().getID());
+                Alat alat = new Alat();
+                if (akanDiAssign.getAlat() != null && akanDiAssign.getProses().getNamaProses().equalsIgnoreCase("PLM")) {
+                    if (akanDiAssign.getAlat().getStatus()) {
+                        alat = akanDiAssign.getAlat();
+                    } else {
+                        alat = this.findAvailableAlat(akanDiAssign.getProses().getID());
+                    }
+                } else {
+                    alat = this.findAvailableAlat(akanDiAssign.getProses().getID());
+                }
 
-                int waktuProses = Integer.parseInt(akanDiAssign.getKomponen().getKuantitas()) * akanDiAssign.getDurasiProses() * 60;
+                Long waktuProsesLong = Math.round(akanDiAssign.getDurasiProses() * Double.parseDouble("60"));
+                Integer waktuProses = Integer.parseInt(waktuProsesLong.toString());
+
+                waktuProses = akanDiAssign.getKomponen().getProduk().getKuantitas() * waktuProses;
 
                 try {
                     tanggalMaster = this.mtaService.findByNamaAlat(alat.getNamaAlat(), Sort.Direction.DESC.toString());
@@ -142,7 +211,7 @@ public class SortingController {
 
                     } else {
                         Date tanggalAkandiAssign = this.dateManipulator.addSeconds(tanggalMaster.get(0).getTanggalAlat(), -waktuProses);
-                        
+
                         if (tanggalAkandiAssign.compareTo(akanDiAssign.getKomponen().getProduk().getTanggalAkhir()) > 0){
                             tanggalAkandiAssign = this.dateManipulator.addSeconds(akanDiAssign.getKomponen().getProduk().getTanggalAkhir(), -waktuProses);
                         }
@@ -164,7 +233,7 @@ public class SortingController {
                         tanggalMaster.get(0).setTanggalAlat(
                                 this.dateManipulator.addSeconds(temp, -waktuProses)
                         );
-                        
+
                         akanDiAssign.setAssignDate(
                             this.dateManipulator.addSeconds(temp, -waktuProses)
                         );
@@ -174,7 +243,7 @@ public class SortingController {
                 alat.setTanggalAssign(tanggalMaster.get(0).getTanggalAlat());
                 alat.setWorkLoad(alat.getWorkLoad() + waktuProses);
 
-                akanDiAssign = this.loopingSorting(tanggalMaster, akanDiAssign, waktuProses);
+                akanDiAssign = this.loopingSorting(tanggalMaster, akanDiAssign, waktuProses, tglLiburList,is2shift);
 
                 akanDiAssign.setAlat(alat);
 
@@ -183,9 +252,15 @@ public class SortingController {
                 akanDiAssign.setIsProses(false);
 
                 temp = tanggalMaster.get(0).getTanggalAlat();
+                
+                if (i == prosesKomponenList.size() - 1) {
+                    minDate = temp;
+                } else if (temp.before(minDate)) {
+                    minDate = temp;
+                }
 
                 this.mtaService.saveOne(tanggalMaster.get(0));
-                listProsesSave.add(akanDiAssign);
+//                listProsesSave.add(akanDiAssign);
 //                this.prosesKomponenService.saveOne(akanDiAssign);
                 this.alatService.save(alat);
             }
@@ -193,121 +268,115 @@ public class SortingController {
             i--;
         }
 
-        try {
-            this.prosesKomponenService.saveAll(listProsesSave);
-        } catch (Exception e) {
-            e.printStackTrace();
-            success = false;
-            return new ResponseEntity<>(result, HttpStatus.OK);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm");
+        Date dt = sdf.parse(request.get("tanggal_mulai").toString() + " " + request.get("jam_mulai").toString());
+
+        if (dt.after(minDate)) {
+//            try {
+//                this.prosesKomponenService.saveAll(listProsesSave);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//                success = false;
+//                return new ResponseEntity<>(result, HttpStatus.OK);
+//            }
+
+            System.out.println("=================" +
+                    "WAKTU MULAI SORTING MELEWATI BATAS MAKSIMAL");
+            result.put("success",false);
+            result.put("message","Batas maksimal sorting adalah " + sdf.format(minDate));
+            result.put("jumlah", prosesKomponenList.size());
+            result.put("hasil", prosesKomponenList);
+            return new ResponseEntity<>(result,HttpStatus.OK);
         }
 
-        List<String> prosesDitarik = this.prosesKomponenService.findSortByKomponenAndProses();
-        Date dt = new Date();
-        Calendar c = Calendar.getInstance();
-        c.setTime(dt);
-        c.set(Calendar.HOUR, 8);
-        c.set(Calendar.MINUTE, 0);
-        c.set(Calendar.SECOND, 0);
-        c.add(Calendar.DATE, 1);
-        dt = c.getTime();
-        Date temp = new Date();
-        Map<String, Date> waktuProduk = new HashMap<>();
-        Long diff;
-        Long diffDays;
-        Long diffSeconds;
-        Long diffMinutes;
-        Long diffHours;
-        for (int z = 0; z < prosesDitarik.size(); z++) {
-            List<ProsesKomponen> akanDiTarik = this.prosesKomponenService.findByProsesAndSortByIdPorses(prosesDitarik.get(z), "");
-            for (int j = 0; j < akanDiTarik.size(); j++) {
-                if (z == 0 && j == 0){
-                    diff = akanDiTarik.get(j).getAssignDate().getTime() - dt.getTime();
-//                    diffDays = diff / (24 * 60 * 60 * 1000);
-                    diffSeconds = diff / 1000 % 60;
-                    diffMinutes = diff / (60 * 1000) % 60;
-                    diffHours = diff / (60 * 60 * 1000);
 
-//                    akanDiTarik.get(j).setAssignDate(
-//                            this.dateManipulator.addDays(akanDiTarik.get(j).getAssignDate(), -diffDays.intValue()));
-//                    akanDiTarik.get(j).setAssignEnd(
-//                            this.dateManipulator.addDays(akanDiTarik.get(j).getAssignEnd(), -diffDays.intValue()));
-                    akanDiTarik.get(j).setAssignDate(
-                            this.dateManipulator.addHours(akanDiTarik.get(j).getAssignDate(), -diffHours.intValue()));
+        List<Object[]> prosesDitarik = this.prosesKomponenService.findSortByKomponenAndProses();
+
+        Map<String, Date> waktuProduk = new HashMap<>();
+        for (int z = 0; z < prosesDitarik.size(); z++) {
+            List<ProsesKomponen> akanDiTarik = this.prosesKomponenService.findByProsesAndSortByIdPorses(prosesDitarik.get(z)[0].toString(), "");
+            for (int j = 0; j < akanDiTarik.size(); j++) {
+                Long waktuProsesLong = Math.round(akanDiTarik.get(j).getDurasiProses() * akanDiTarik.get(j).getKomponen().getProduk().getKuantitas() * Double.parseDouble("60"));
+                Integer waktuProses = Integer.parseInt(waktuProsesLong.toString());
+                if (z == 0 && j == 0){
+
+                    akanDiTarik.get(j).setAssignDate(dt);
                     akanDiTarik.get(j).setAssignEnd(
-                            this.dateManipulator.addHours(akanDiTarik.get(j).getAssignEnd(), -diffHours.intValue()));
-                    akanDiTarik.get(j).setAssignDate(
-                            this.dateManipulator.addMinutes(akanDiTarik.get(j).getAssignDate(), -diffMinutes.intValue()));
-                    akanDiTarik.get(j).setAssignEnd(
-                            this.dateManipulator.addMinutes(akanDiTarik.get(j).getAssignEnd(), -diffMinutes.intValue()));
-                    akanDiTarik.get(j).setAssignDate(
-                            this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignDate(), -diffSeconds.intValue()));
-                    akanDiTarik.get(j).setAssignEnd(
-                            this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignEnd(), -diffSeconds.intValue()));
+                            this.dateManipulator.addSeconds(dt, waktuProses));
+
+                    akanDiTarik.set(j,this.checkAssignEnd(akanDiTarik.get(j),is2shift));
 
                 } else if (j > 0) {
                     if (waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()) != null
                     && waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()).after(akanDiTarik.get(j - 1).getAssignEnd())) {
-                        diff = akanDiTarik.get(j).getAssignDate().getTime() - waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()).getTime();
+                        dt = waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat());
                     } else {
-                        diff = akanDiTarik.get(j).getAssignDate().getTime() - akanDiTarik.get(j - 1).getAssignEnd().getTime();
+                        dt = akanDiTarik.get(j - 1).getAssignEnd();
                     }
-//                    diffDays = diff / (24 * 60 * 60 * 1000);
-                    diffSeconds = diff / 1000 % 60;
-                    diffMinutes = diff / (60 * 1000) % 60;
-                    diffHours = diff / (60 * 60 * 1000);
 
-//                    akanDiTarik.get(j).setAssignDate(
-//                            this.dateManipulator.addDays(akanDiTarik.get(j).getAssignDate(), -diffDays.intValue()));
-//                    akanDiTarik.get(j).setAssignEnd(
-//                            this.dateManipulator.addDays(akanDiTarik.get(j).getAssignEnd(), -diffDays.intValue()));
-                    akanDiTarik.get(j).setAssignDate(
-                            this.dateManipulator.addHours(akanDiTarik.get(j).getAssignDate(), -diffHours.intValue()));
+                                       akanDiTarik.get(j).setAssignDate(dt);
                     akanDiTarik.get(j).setAssignEnd(
-                            this.dateManipulator.addHours(akanDiTarik.get(j).getAssignEnd(), -diffHours.intValue()));
-                    akanDiTarik.get(j).setAssignDate(
-                            this.dateManipulator.addMinutes(akanDiTarik.get(j).getAssignDate(), -diffMinutes.intValue()));
-                    akanDiTarik.get(j).setAssignEnd(
-                            this.dateManipulator.addMinutes(akanDiTarik.get(j).getAssignEnd(), -diffMinutes.intValue()));
-                    akanDiTarik.get(j).setAssignDate(
-                            this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignDate(), -diffSeconds.intValue()));
-                    akanDiTarik.get(j).setAssignEnd(
-                            this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignEnd(), -diffSeconds.intValue()));
+                            this.dateManipulator.addSeconds(dt, waktuProses));
 
-                    if (j == akanDiTarik.size() - 1) {
-                        temp = akanDiTarik.get(j).getAssignEnd();
+
+                    Calendar cat = Calendar.getInstance();
+                    cat.setTime(akanDiTarik.get(j).getAssignDate());
+                    Calendar catPembanding = cat;
+                    catPembanding.set(Calendar.AM_PM,Calendar.AM);
+                    catPembanding.set(Calendar.HOUR, 3);
+                   if (this.cekTanggal(tglLiburList, cat.getTime())) {
+
+                        while (this.cekTanggal(tglLiburList, cat.getTime())) {
+                            cat.add(Calendar.DATE, 1);
+                        }
+                        cat.set(Calendar.AM_PM,Calendar.AM);
+                        cat.set(Calendar.HOUR,8);
+                        cat.set(Calendar.MINUTE,0);
+                        cat.set(Calendar.SECOND,0);
+
+                        akanDiTarik.get(j).setAssignDate(cat.getTime());
+                        akanDiTarik.get(j).setAssignEnd(cat.getTime());
+                        akanDiTarik.get(j).setAssignEnd(
+                                this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignEnd(), waktuProses));
                     }
+
+
+                    akanDiTarik.set(j,this.checkAssignEnd(akanDiTarik.get(j),is2shift));
+
 
                 } else if (z != 0 && j == 0) {
-                    if (waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()) != null
-                            && waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()).after(temp)) {
-                        diff = akanDiTarik.get(j).getAssignDate().getTime() - waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()).getTime();
-                    } else if (waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()) == null
-                            && akanDiTarik.get(j).getProses().getSortId()==1){
-                        diff = akanDiTarik.get(j).getAssignDate().getTime() - dt.getTime();
+                    if (waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()) != null) {
+                        dt = waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat());
                     } else {
-                        diff = akanDiTarik.get(j).getAssignDate().getTime() - temp.getTime();
+                        dt = sdf.parse(request.get("tanggal_mulai").toString() + " " + request.get("jam_mulai").toString());
                     }
-//                    diffDays = diff / (24 * 60 * 60 * 1000);
-                    diffSeconds = diff / 1000 % 60;
-                    diffMinutes = diff / (60 * 1000) % 60;
-                    diffHours = diff / (60 * 60 * 1000);
+                    akanDiTarik.get(j).setAssignDate(dt);
+                    akanDiTarik.get(j).setAssignEnd(
+                            this.dateManipulator.addSeconds(dt, waktuProses));
 
-//                    akanDiTarik.get(j).setAssignDate(
-//                            this.dateManipulator.addDays(akanDiTarik.get(j).getAssignDate(), -diffDays.intValue()));
-//                    akanDiTarik.get(j).setAssignEnd(
-//                            this.dateManipulator.addDays(akanDiTarik.get(j).getAssignEnd(), -diffDays.intValue()));
-                    akanDiTarik.get(j).setAssignDate(
-                            this.dateManipulator.addHours(akanDiTarik.get(j).getAssignDate(), -diffHours.intValue()));
-                    akanDiTarik.get(j).setAssignEnd(
-                            this.dateManipulator.addHours(akanDiTarik.get(j).getAssignEnd(), -diffHours.intValue()));
-                    akanDiTarik.get(j).setAssignDate(
-                            this.dateManipulator.addMinutes(akanDiTarik.get(j).getAssignDate(), -diffMinutes.intValue()));
-                    akanDiTarik.get(j).setAssignEnd(
-                            this.dateManipulator.addMinutes(akanDiTarik.get(j).getAssignEnd(), -diffMinutes.intValue()));
-                    akanDiTarik.get(j).setAssignDate(
-                            this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignDate(), -diffSeconds.intValue()));
-                    akanDiTarik.get(j).setAssignEnd(
-                            this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignEnd(), -diffSeconds.intValue()));
+                    Calendar cat = Calendar.getInstance();
+                    cat.setTime(akanDiTarik.get(j).getAssignDate());
+                    Calendar catPembanding = cat;
+                    catPembanding.set(Calendar.AM_PM,Calendar.AM);
+                    catPembanding.set(Calendar.HOUR, 3);
+                    if (this.cekTanggal(tglLiburList, cat.getTime())) {
+
+                        while (this.cekTanggal(tglLiburList, cat.getTime())) {
+                            cat.add(Calendar.DATE, 1);
+                        }
+
+                        cat.set(Calendar.AM_PM,Calendar.AM);
+                        cat.set(Calendar.HOUR,8);
+                        cat.set(Calendar.MINUTE,0);
+                        cat.set(Calendar.SECOND,0);
+
+                        akanDiTarik.get(j).setAssignDate(cat.getTime());
+                        akanDiTarik.get(j).setAssignEnd(cat.getTime());
+                        akanDiTarik.get(j).setAssignEnd(
+                                this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignEnd(), waktuProses));
+                    }
+
+                    akanDiTarik.set(j,this.checkAssignEnd(akanDiTarik.get(j),is2shift));
 
                 }
                 waktuProduk.put(akanDiTarik.get(j).getAlat().getNamaAlat(), akanDiTarik.get(j).getAssignEnd());
@@ -319,50 +388,140 @@ public class SortingController {
 
         }
 
-     /*       System.out.println("nama produk " + namaProduk.get(z));
-
-            prosesDitarik = this.prosesKomponenService.findProsesTerakhir(namaProduk.get(z));
-
-            if (z != 0) {
-
-                List<ProsesKomponen> prosesSebelumnya = this.prosesKomponenService.findProsesTerakhir(namaProduk.get(z - 1));
-                Long diff = prosesDitarik.get(prosesDitarik.size() - 1).getAssignDate().getTime() - prosesSebelumnya.get(prosesSebelumnya.size() - 1).getAssignDate().getTime();
-                Long diffDays = diff / (24 * 60 * 60 * 1000);
-
-                for (int aa = 0; aa < prosesDitarik.size(); aa++) {
-
-                   prosesDitarik.get(aa).setAssignDate(
-                            this.dateManipulator.addDays(prosesDitarik.get(aa).getAssignDate(), -diffDays.intValue()));
-                    prosesDitarik.get(aa).setAssignEnd(
-                            this.dateManipulator.addDays(prosesDitarik.get(aa).getAssignEnd(), -diffDays.intValue()));
-
-                }
-
-            } else {
-                Long diff = prosesDitarik.get(prosesDitarik.size() - 1).getAssignDate().getTime() - input.getTime().getTime();
-                Long diffDays = diff / (24 * 60 * 60 * 1000);
-                for (int aa = 0; aa < prosesDitarik.size(); aa++) {
-
-                    prosesDitarik.get(aa).setAssignDate(
-                            this.dateManipulator.addDays(prosesDitarik.get(aa).getAssignDate(), -diffDays.intValue()));
-                    prosesDitarik.get(aa).setAssignEnd(
-                            this.dateManipulator.addDays(prosesDitarik.get(aa).getAssignEnd(), -diffDays.intValue()));
-
-
-                }
-            }
-
-            this.prosesKomponenService.saveAll(prosesDitarik);
-        }*/
-
         System.out.println("=====================\n"
                 + "     JOB DONE \n"
                 + "=====================");
 
         result.put("success", success);
+        result.put("message","Sukses melakukan sorting!");
         result.put("jumlah", prosesKomponenList.size());
         result.put("hasil", prosesKomponenList);
         return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @RequestMapping("/do-nest-sorting")
+    public ResponseEntity<Map<String, Object>> doNestSorting(@RequestBody Map<String, Object> request) {
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> resource = new ArrayList<>();
+        List<Map<String, Object>> event = new ArrayList<>();
+        boolean is2shift = true;
+
+           try {
+            List<Object[]> prosesDitarik = this.prosesKomponenService.findSortByNest();
+            List<TanggalLibur> tglLiburList = this.prosesKomponenService.findAllLibur();
+               AppSetting app = appSettingService.findById("DOUBLE_SHIFT");
+               is2shift = app.getAppValue() == "1" ? true : false;
+            Date dt = new Date();
+            Calendar c = Calendar.getInstance();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm");
+            dt = sdf.parse(request.get("tanggal_mulai").toString() + " " + request.get("jam_mulai").toString());
+            Date temp = new Date();
+               Map<String, Date> waktuProduk = new HashMap<>();
+               for (int z = 0; z < prosesDitarik.size(); z++) {
+                   List<ProsesKomponen> akanDiTarik = this.prosesKomponenService.findByProsesAndSortByIdPorses(prosesDitarik.get(z)[0].toString(), "");
+                   for (int j = 0; j < akanDiTarik.size(); j++) {
+                       Long waktuProsesLong = Math.round(akanDiTarik.get(j).getDurasiProses() * akanDiTarik.get(j).getKomponen().getProduk().getKuantitas() * Double.parseDouble("60"));
+                       Integer waktuProses = Integer.parseInt(waktuProsesLong.toString());
+                       if (z == 0 && j == 0){
+
+                           akanDiTarik.get(j).setAssignDate(dt);
+                           akanDiTarik.get(j).setAssignEnd(
+                                   this.dateManipulator.addSeconds(dt, waktuProses));
+
+                           akanDiTarik.set(j,this.checkAssignEnd(akanDiTarik.get(j),is2shift));
+
+                       } else if (j > 0) {
+                           if (waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()) != null
+                                   && waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()).after(akanDiTarik.get(j - 1).getAssignEnd())) {
+                               dt = waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat());
+                           } else {
+                               dt = akanDiTarik.get(j - 1).getAssignEnd();
+                           }
+
+                           akanDiTarik.get(j).setAssignDate(dt);
+                           akanDiTarik.get(j).setAssignEnd(
+                                   this.dateManipulator.addSeconds(dt, waktuProses));
+
+
+                           Calendar cat = Calendar.getInstance();
+                           cat.setTime(akanDiTarik.get(j).getAssignDate());
+                           Calendar catPembanding = cat;
+                           catPembanding.set(Calendar.AM_PM,Calendar.AM);
+                           catPembanding.set(Calendar.HOUR, 3);
+                           if (this.cekTanggal(tglLiburList, cat.getTime())) {
+
+                               while (this.cekTanggal(tglLiburList, cat.getTime())) {
+                                   cat.add(Calendar.DATE, 1);
+                               }
+                               cat.set(Calendar.AM_PM,Calendar.AM);
+                               cat.set(Calendar.HOUR,8);
+                               cat.set(Calendar.MINUTE,0);
+                               cat.set(Calendar.SECOND,0);
+
+                               akanDiTarik.get(j).setAssignDate(cat.getTime());
+                               akanDiTarik.get(j).setAssignEnd(cat.getTime());
+                               akanDiTarik.get(j).setAssignEnd(
+                                       this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignEnd(), waktuProses));
+                           }
+
+
+                           akanDiTarik.set(j,this.checkAssignEnd(akanDiTarik.get(j),is2shift));
+
+
+                       } else if (z != 0 && j == 0) {
+                           if (waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()) != null) {
+                               dt = waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat());
+                           } else {
+                               dt = sdf.parse(request.get("tanggal_mulai").toString() + " " + request.get("jam_mulai").toString());
+                           }
+                           akanDiTarik.get(j).setAssignDate(dt);
+                           akanDiTarik.get(j).setAssignEnd(
+                                   this.dateManipulator.addSeconds(dt, waktuProses));
+
+                           Calendar cat = Calendar.getInstance();
+                           cat.setTime(akanDiTarik.get(j).getAssignDate());
+                           Calendar catPembanding = cat;
+                           catPembanding.set(Calendar.AM_PM,Calendar.AM);
+                           catPembanding.set(Calendar.HOUR, 3);
+                           if (this.cekTanggal(tglLiburList, cat.getTime())) {
+
+                               while (this.cekTanggal(tglLiburList, cat.getTime())) {
+                                   cat.add(Calendar.DATE, 1);
+                               }
+
+                               cat.set(Calendar.AM_PM,Calendar.AM);
+                               cat.set(Calendar.HOUR,8);
+                               cat.set(Calendar.MINUTE,0);
+                               cat.set(Calendar.SECOND,0);
+
+                               akanDiTarik.get(j).setAssignDate(cat.getTime());
+                               akanDiTarik.get(j).setAssignEnd(cat.getTime());
+                               akanDiTarik.get(j).setAssignEnd(
+                                       this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignEnd(), waktuProses));
+                           }
+
+                           akanDiTarik.set(j,this.checkAssignEnd(akanDiTarik.get(j),is2shift));
+
+                       }
+                       waktuProduk.put(akanDiTarik.get(j).getAlat().getNamaAlat(), akanDiTarik.get(j).getAssignEnd());
+
+
+                   }
+
+                   this.prosesKomponenService.saveAll(akanDiTarik);
+
+               }
+
+               result.put("message", "Berhasil melakukan Nest Sorting!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("success",false);
+            result.put("message","Gagal melakukan Nest Sorting!");
+            return new ResponseEntity<>(result, HttpStatus.EXPECTATION_FAILED);
+        }
+        result.put("success", true);
+        return new ResponseEntity<>(result, HttpStatus.OK);
+
     }
     
     @RequestMapping("/getSorting")
@@ -431,6 +590,21 @@ public class SortingController {
  
     }
 
+    private Boolean cekTanggal (List<TanggalLibur> tglLiburList, Date tglKomponen) throws ParseException {
+        Calendar cat = Calendar.getInstance();
+        cat.setTime(tglKomponen);
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        String tglKompString = sdf.format(tglKomponen);
+        Date tglKomp00 = sdf.parse(tglKompString);
+        for (int i = 0; i <  tglLiburList.size(); i++) {
+            if (tglKomp00.compareTo(tglLiburList.get(i).getTanggalLibur()) == 0 || cat.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY ||
+             cat.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Alat findAvailableAlat(String prosesId) {
 
         List<Alat> listAlat = this.alatService.findOneByMasterDescIsNull(prosesId);
@@ -447,11 +621,12 @@ public class SortingController {
 
     private void refreshMasterAlatDanSort() {
         this.mtaService.refreshMta();
-        this.prosesKomponenService.refreshProsesKomponen();
+//        this.prosesKomponenService.refreshProsesKomponen();
         this.alatService.refreshAlat();
     }
 
-    private ProsesKomponen loopingSorting(List<MasterTanggalAlat> tanggalMaster, ProsesKomponen akanDiAssign, int waktuProses) throws ParseException {
+    private ProsesKomponen loopingSorting(List<MasterTanggalAlat> tanggalMaster, ProsesKomponen akanDiAssign,
+                                          int waktuProses, List<TanggalLibur> tglLiburList, Boolean is2shift) throws ParseException {
         Calendar cat = Calendar.getInstance();
         cat.setTime(tanggalMaster.get(0).getTanggalAlat());
 
@@ -562,22 +737,29 @@ public class SortingController {
                 && cat.getTime().compareTo(jamAwalIstirahat.getTime()) > 0) {
             status = "02";
         } else if (cat.getTime().compareTo(jamMulaiKerja.getTime()) < 0
-                && cat.getTime().compareTo(shift2JamAkhir.getTime()) > 0) {
+                && cat.getTime().compareTo(shift2JamAkhir.getTime()) > 0  && is2shift) {
             status = "01";
         } else if (cat.getTime().compareTo(shift2JamMulai.getTime()) < 0
-                && cat.getTime().compareTo(jamAkhirKerja.getTime()) > 0) {
+                && cat.getTime().compareTo(jamAkhirKerja.getTime()) > 0 && is2shift) {
             status = "03";
         } else if (cat.getTime().compareTo(shift2CFBAkhir.getTime()) < 0
-                && cat.getTime().compareTo(shift2CFBMulai.getTime()) > 0) {
+                && cat.getTime().compareTo(shift2CFBMulai.getTime()) > 0  && is2shift) {
             status = "04";
         } else if (cat.getTime().compareTo(shift2IstirhahatAkhir.getTime()) < 0
-                && cat.getTime().compareTo(shift2IstirahatMulai.getTime()) > 0) {
+                && cat.getTime().compareTo(shift2IstirahatMulai.getTime()) > 0  && is2shift) {
             status = "05";
-        } else if (cat.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY
+        } else if (this.cekTanggal(tglLiburList,cat.getTime()) ||
+                (cat.get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY && cat.getTime().compareTo(jamMulaiKerja.getTime()) < 0)){
+            status = "06";
+        }  else if (cat.getTime().compareTo(jamAkhirKerja.getTime()) > 0 && !is2shift) {
+            status = "07";
+        }
+        /*else if (cat.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY
                 || (cat.get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY
                 && cat.getTime().compareTo(jamMulaiKerja.getTime()) < 0)) {
             status = "06";
-        } else {
+        } */
+        else {
             status = "00";
         }
 
@@ -673,12 +855,38 @@ public class SortingController {
                     diffHours = diff / (60 * 60 * 1000);
 
 //                            System.out.println("Perbedaan pada sebelum jam kerja sort ke " + i + " " + diffHours + " jam " + diffMinutes + " menit " + diffSeconds + " detik");
-                    if (cat.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
+                    /*if (cat.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
                         jamMulaiKembali = this.dateManipulator.addDays(shift2JamAkhir.getTime(), -1);
                     } else {
                         jamMulaiKembali = this.dateManipulator.addDays(shift2JamAkhir.getTime(), -2);
+                    }*/
+
+                    jamMulaiKembali = shift2JamAkhir.getTime();
+                    int amountDiff = 0;
+                    while (cekTanggal(tglLiburList, cat.getTime())) {
+                        cat.setTime(this.dateManipulator.addDays(cat.getTime(), -1));
+                        amountDiff++;
                     }
+
+                    jamMulaiKembali = this.dateManipulator.addDays(shift2JamAkhir.getTime(), -amountDiff);
                     jamMulaiKembali = this.dateManipulator.addSeconds(jamMulaiKembali, diffSeconds.intValue());
+                    jamMulaiKembali = this.dateManipulator.addMinutes(jamMulaiKembali, diffMinutes.intValue());
+                    jamMulaiKembali = this.dateManipulator.addHours(jamMulaiKembali, diffHours.intValue());
+
+                    akanDiAssign.setAssignDate(jamMulaiKembali);
+                    tanggalMaster.get(0).setTanggalAlat(jamMulaiKembali);
+                    break;
+                case "07" :
+                    diff = cat.getTime().getTime() - jamMulaiKerja.getTime().getTime();
+
+                    diffSeconds = diff / 1000 % 60;
+                    diffMinutes = diff / (60 * 1000) % 60;
+                    diffHours = diff / (60 * 60 * 1000);
+
+//                            System.out.println("Perbedaan pada sebelum jam kerja sort ke " + i + " " + diffHours + " jam " + diffMinutes + " menit " + diffSeconds + " detik");
+                    cat.setTime(this.dateManipulator.addDays(cat.getTime(), -1));
+                    jamAkhirKerja.add(Calendar.DATE, -1);
+                    jamMulaiKembali = this.dateManipulator.addSeconds(jamAkhirKerja.getTime(), diffSeconds.intValue());
                     jamMulaiKembali = this.dateManipulator.addMinutes(jamMulaiKembali, diffMinutes.intValue());
                     jamMulaiKembali = this.dateManipulator.addHours(jamMulaiKembali, diffHours.intValue());
 
@@ -789,11 +997,17 @@ public class SortingController {
             } else if (cat.getTime().compareTo(shift2IstirhahatAkhir.getTime()) < 0
                     && cat.getTime().compareTo(shift2IstirahatMulai.getTime()) > 0) {
                 status = "05";
-            } else if (cat.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY
-                    || (cat.get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY
-                    && cat.getTime().compareTo(jamMulaiKerja.getTime()) < 0)) {
+            }else if (this.cekTanggal(tglLiburList,cat.getTime()) ||
+                    (cat.get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY && cat.getTime().compareTo(jamMulaiKerja.getTime()) < 0)){
                 status = "06";
-            } else {
+            }  else if (cat.getTime().compareTo(jamAkhirKerja.getTime()) > 0 && !is2shift) {
+                status = "07";
+            }
+        /*else if (cat.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY
+                || (cat.get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY
+                && cat.getTime().compareTo(jamMulaiKerja.getTime()) < 0)) {
+            status = "06";
+        } */ else {
                 status = "00";
             }
 
@@ -802,11 +1016,9 @@ public class SortingController {
         return akanDiAssign;
     }
 
-    private Date loopingKedua(Date tanggal, ProsesKomponen akanDiAssign) throws ParseException {
-        int waktuProses = akanDiAssign.getDurasiProses() * Integer.parseInt(akanDiAssign.getKomponen().getKuantitas() ) * 60;
-        tanggal = this.dateManipulator.addSeconds(tanggal, waktuProses);
+    private ProsesKomponen checkAssignEnd(ProsesKomponen akanDiAssign, Boolean is2shift) throws ParseException {
         Calendar cat = Calendar.getInstance();
-        cat.setTime(tanggal);
+        cat.setTime(akanDiAssign.getAssignEnd());
 
         // **AWAL JAM ISTIRAHAT
         Calendar jamAwalIstirahat = Calendar.getInstance();
@@ -885,21 +1097,6 @@ public class SortingController {
         shift2IstirahatMulai.set(Calendar.MINUTE, 00);
         shift2IstirahatMulai.set(Calendar.SECOND, 00);
 
-//                System.out.println(jamAkhirIstirahat.getTime());
-//                System.out.println(jamAwalIstirahat.getTime());
-//                System.out.println(jamMulaiKerja.getTime());
-//                System.out.println(jamAkhirKerja.getTime());
-//                System.out.println(shift2JamMulai.getTime());
-//                System.out.println(shift2JamAkhir.getTime());
-//                System.out.println(shift2CFBMulai.getTime());
-//                System.out.println(shift2CFBAkhir.getTime());
-//                System.out.println(shift2IstirahatMulai.getTime());
-//                System.out.println(shift2IstirhahatAkhir.getTime());
-//                System.out.println(tanggalMaster.get(0).getTanggalAlat());
-        akanDiAssign.setAssignDate(tanggal);
-        akanDiAssign.setAssignEnd(this.dateManipulator.addSeconds(tanggal, waktuProses)
-        );
-
         /*
                  00  :   jam kerja yang valid
                  01  :   diantara shift2akhir dengan shift1awal
@@ -915,22 +1112,26 @@ public class SortingController {
                 && cat.getTime().compareTo(jamAwalIstirahat.getTime()) > 0) {
             status = "02";
         } else if (cat.getTime().compareTo(jamMulaiKerja.getTime()) < 0
-                && cat.getTime().compareTo(shift2JamAkhir.getTime()) > 0) {
+                && cat.getTime().compareTo(shift2JamAkhir.getTime()) > 0 && is2shift) {
             status = "01";
         } else if (cat.getTime().compareTo(shift2JamMulai.getTime()) < 0
-                && cat.getTime().compareTo(jamAkhirKerja.getTime()) > 0) {
+                && cat.getTime().compareTo(jamAkhirKerja.getTime()) > 0 && is2shift) {
             status = "03";
         } else if (cat.getTime().compareTo(shift2CFBAkhir.getTime()) < 0
-                && cat.getTime().compareTo(shift2CFBMulai.getTime()) > 0) {
+                && cat.getTime().compareTo(shift2CFBMulai.getTime()) > 0 && is2shift) {
             status = "04";
         } else if (cat.getTime().compareTo(shift2IstirhahatAkhir.getTime()) < 0
-                && cat.getTime().compareTo(shift2IstirahatMulai.getTime()) > 0) {
+                && cat.getTime().compareTo(shift2IstirahatMulai.getTime()) > 0 && is2shift) {
             status = "05";
-        } else if (cat.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY
-                || (cat.get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY
-                && cat.getTime().compareTo(jamMulaiKerja.getTime()) < 0)) {
-            status = "06";
-        } else {
+        }  else if (cat.getTime().compareTo(jamAkhirKerja.getTime()) > 0 && !is2shift) {
+            status = "07";
+        }
+//        else if (cat.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY
+//                || (cat.get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY
+//                && cat.getTime().compareTo(jamMulaiKerja.getTime()) < 0)) {
+//            status = "06";
+//        }
+        else {
             status = "00";
         }
 
@@ -944,7 +1145,7 @@ public class SortingController {
 
             switch (status) {
                 case "01":
-                    diff = cat.getTime().getTime() - jamMulaiKerja.getTime().getTime();
+                    diff = cat.getTime().getTime() - shift2JamAkhir.getTime().getTime();
 
                     diffSeconds = diff / 1000 % 60;
                     diffMinutes = diff / (60 * 1000) % 60;
@@ -955,11 +1156,10 @@ public class SortingController {
                     jamMulaiKembali = this.dateManipulator.addMinutes(jamMulaiKembali, diffMinutes.intValue());
                     jamMulaiKembali = this.dateManipulator.addHours(jamMulaiKembali, diffHours.intValue());
 
-                    akanDiAssign.setAssignDate(jamMulaiKembali);
-                    tanggal = jamMulaiKembali;
+                    akanDiAssign.setAssignEnd(jamMulaiKembali);
                     break;
                 case "02":
-                    diff = cat.getTime().getTime() - jamAkhirIstirahat.getTime().getTime();
+                    diff = cat.getTime().getTime() - jamAwalIstirahat.getTime().getTime();
 
                     diffSeconds = diff / 1000 % 60;
                     diffMinutes = diff / (60 * 1000) % 60;
@@ -970,11 +1170,10 @@ public class SortingController {
                     jamMulaiKembali = this.dateManipulator.addMinutes(jamMulaiKembali, diffMinutes.intValue());
                     jamMulaiKembali = this.dateManipulator.addHours(jamMulaiKembali, diffHours.intValue());
 
-                    akanDiAssign.setAssignDate(jamMulaiKembali);
-                    tanggal = jamMulaiKembali;
+                    akanDiAssign.setAssignEnd(jamMulaiKembali);
                     break;
                 case "03":
-                    diff = cat.getTime().getTime() - shift2JamMulai.getTime().getTime();
+                    diff = cat.getTime().getTime() - jamAkhirKerja.getTime().getTime();
 
                     diffSeconds = diff / 1000 % 60;
                     diffMinutes = diff / (60 * 1000) % 60;
@@ -985,11 +1184,10 @@ public class SortingController {
                     jamMulaiKembali = this.dateManipulator.addMinutes(jamMulaiKembali, diffMinutes.intValue());
                     jamMulaiKembali = this.dateManipulator.addHours(jamMulaiKembali, diffHours.intValue());
 
-                    akanDiAssign.setAssignDate(jamMulaiKembali);
-                    tanggal = jamMulaiKembali;
+                    akanDiAssign.setAssignEnd(jamMulaiKembali);
                     break;
                 case "04":
-                    diff = cat.getTime().getTime() - shift2CFBAkhir.getTime().getTime();
+                    diff = cat.getTime().getTime() - shift2CFBMulai.getTime().getTime();
 
                     diffSeconds = diff / 1000 % 60;
                     diffMinutes = diff / (60 * 1000) % 60;
@@ -1000,11 +1198,10 @@ public class SortingController {
                     jamMulaiKembali = this.dateManipulator.addMinutes(jamMulaiKembali, diffMinutes.intValue());
                     jamMulaiKembali = this.dateManipulator.addHours(jamMulaiKembali, diffHours.intValue());
 
-                    akanDiAssign.setAssignDate(jamMulaiKembali);
-                    tanggal = jamMulaiKembali;
+                    akanDiAssign.setAssignEnd(jamMulaiKembali);
                     break;
                 case "05":
-                    diff = cat.getTime().getTime() - shift2IstirhahatAkhir.getTime().getTime();
+                    diff = cat.getTime().getTime() - shift2IstirahatMulai.getTime().getTime();
 
                     diffSeconds = diff / 1000 % 60;
                     diffMinutes = diff / (60 * 1000) % 60;
@@ -1015,8 +1212,7 @@ public class SortingController {
                     jamMulaiKembali = this.dateManipulator.addMinutes(jamMulaiKembali, diffMinutes.intValue());
                     jamMulaiKembali = this.dateManipulator.addHours(jamMulaiKembali, diffHours.intValue());
 
-                    akanDiAssign.setAssignDate(jamMulaiKembali);
-                    tanggal = jamMulaiKembali;
+                    akanDiAssign.setAssignEnd(jamMulaiKembali);
                     break;
                 case "06":
                     diff = cat.getTime().getTime() - jamMulaiKerja.getTime().getTime();
@@ -1027,21 +1223,36 @@ public class SortingController {
 
 //                            System.out.println("Perbedaan pada sebelum jam kerja sort ke " + i + " " + diffHours + " jam " + diffMinutes + " menit " + diffSeconds + " detik");
                     if (cat.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
-                        jamMulaiKembali = this.dateManipulator.addDays(jamMulaiKerja.getTime(), -1);
+                        jamMulaiKembali = this.dateManipulator.addDays(shift2JamAkhir.getTime(), 1);
                     } else {
-                        jamMulaiKembali = this.dateManipulator.addDays(shift2JamAkhir.getTime(), -2);
+                        jamMulaiKembali = this.dateManipulator.addDays(shift2JamAkhir.getTime(), 2);
                     }
                     jamMulaiKembali = this.dateManipulator.addSeconds(jamMulaiKembali, diffSeconds.intValue());
                     jamMulaiKembali = this.dateManipulator.addMinutes(jamMulaiKembali, diffMinutes.intValue());
                     jamMulaiKembali = this.dateManipulator.addHours(jamMulaiKembali, diffHours.intValue());
 
-                    akanDiAssign.setAssignDate(jamMulaiKembali);
-                    tanggal = jamMulaiKembali;
+                    akanDiAssign.setAssignEnd(jamMulaiKembali);
+                    break;
+                case "07":
+                    diff = cat.getTime().getTime() - jamAkhirKerja.getTime().getTime();
+
+                    diffSeconds = diff / 1000 % 60;
+                    diffMinutes = diff / (60 * 1000) % 60;
+                    diffHours = diff / (60 * 60 * 1000);
+
+//                            System.out.println("Perbedaan pada sebelum jam kerja sort ke " + i + " " + diffHours + " jam " + diffMinutes + " menit " + diffSeconds + " detik");
+                    cat.setTime(this.dateManipulator.addDays(cat.getTime(), 1));
+                    jamMulaiKerja.add(Calendar.DATE, 1);
+                    jamMulaiKembali = this.dateManipulator.addSeconds(jamMulaiKerja.getTime(), diffSeconds.intValue());
+                    jamMulaiKembali = this.dateManipulator.addMinutes(jamMulaiKembali, diffMinutes.intValue());
+                    jamMulaiKembali = this.dateManipulator.addHours(jamMulaiKembali, diffHours.intValue());
+
+                    akanDiAssign.setAssignEnd(jamMulaiKembali);
                     break;
             }
 
             cat = Calendar.getInstance();
-            cat.setTime(tanggal);
+            cat.setTime(akanDiAssign.getAssignEnd());
 
             // **AWAL JAM ISTIRAHAT
             jamAwalIstirahat.setTime(cat.getTime());
@@ -1110,14 +1321,6 @@ public class SortingController {
             shift2IstirahatMulai.set(Calendar.MINUTE, 00);
             shift2IstirahatMulai.set(Calendar.SECOND, 00);
 
-//                    System.out.println(jamAkhirIstirahat.getTime());
-//                    System.out.println(jamAwalIstirahat.getTime());
-//                    System.out.println(jamMulaiKerja.getTime());
-//                    System.out.println(tanggalMaster.get(0).getTanggalAlat());
-            akanDiAssign.setAssignDate(tanggal);
-            akanDiAssign.setAssignEnd(this.dateManipulator.addSeconds(tanggal, waktuProses)
-            );
-
             /*
                      00  :   diantara jam berangkat dan sebelum istirahat ATAU setelah jam istirahat dan sebelum pulang
                      01  :   diantara shift2akhir dengan shift1awal
@@ -1125,7 +1328,7 @@ public class SortingController {
                      03  :   diantara shift1akhir dengan shift2awal
                      04  :   diantara shift2 Coffee Break
                      05  :   diantara jam makan shift2
-                
+
              */
             if (cat.getTime().compareTo(jamAkhirIstirahat.getTime()) < 0
                     && cat.getTime().compareTo(jamAwalIstirahat.getTime()) > 0) {
@@ -1134,25 +1337,27 @@ public class SortingController {
                     && cat.getTime().compareTo(shift2JamAkhir.getTime()) > 0) {
                 status = "01";
             } else if (cat.getTime().compareTo(shift2JamMulai.getTime()) < 0
-                    && cat.getTime().compareTo(jamAkhirKerja.getTime()) > 0) {
+                    && cat.getTime().compareTo(jamAkhirKerja.getTime()) > 0 && is2shift) {
                 status = "03";
             } else if (cat.getTime().compareTo(shift2CFBAkhir.getTime()) < 0
-                    && cat.getTime().compareTo(shift2CFBMulai.getTime()) > 0) {
+                    && cat.getTime().compareTo(shift2CFBMulai.getTime()) > 0 && is2shift) {
                 status = "04";
             } else if (cat.getTime().compareTo(shift2IstirhahatAkhir.getTime()) < 0
-                    && cat.getTime().compareTo(shift2IstirahatMulai.getTime()) > 0) {
+                    && cat.getTime().compareTo(shift2IstirahatMulai.getTime()) > 0 && is2shift) {
                 status = "05";
             } else if (cat.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY
                     || (cat.get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY
                     && cat.getTime().compareTo(jamMulaiKerja.getTime()) < 0)) {
                 status = "06";
+            }  else if (cat.getTime().compareTo(jamAkhirKerja.getTime()) > 0 && !is2shift) {
+                status = "07";
             } else {
                 status = "00";
             }
 
         }
 
-        return tanggal;
+        return akanDiAssign;
     }
 
 }

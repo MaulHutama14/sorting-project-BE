@@ -8,6 +8,7 @@ package com.sorting.project.model;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,14 +26,21 @@ import javax.persistence.Table;
 @Entity
 @Table(name="TX_KOMPONEN")
 public class Komponen implements Serializable{
-    
+
+    public Komponen() {
+        this.id = UUID.randomUUID().toString();
+        this.createdOn = new Date();
+    }
+
     @Id
     @Column(name="ID")
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
+    private String id;
     
     @Column(name="PRIORITAS", length = 50, nullable = false)
     private String prioritas;
+
+    @Column(name = "PRIORITAS_NEST")
+    private String prioritasNest;
         
     @Column(name="NAMA_KOMPONEN", length=50, nullable = false)
     private String namaKomponen;
@@ -71,11 +79,20 @@ public class Komponen implements Serializable{
     @Column(name = "IS_ACTIVE")
     private Boolean isAktif;
 
-    public Integer getId() {
+    @Column(name = "PANJANG")
+    private Double panjang;
+
+    @Column(name = "LEBAR")
+    private Double lebar;
+
+    @Column(name = "TINGGI")
+    private Double tinggi;
+
+    public String getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -173,5 +190,37 @@ public class Komponen implements Serializable{
 
     public void setAktif(Boolean aktif) {
         isAktif = aktif;
+    }
+
+    public Double getPanjang() {
+        return panjang;
+    }
+
+    public void setPanjang(Double panjang) {
+        this.panjang = panjang;
+    }
+
+    public Double getLebar() {
+        return lebar;
+    }
+
+    public void setLebar(Double lebar) {
+        this.lebar = lebar;
+    }
+
+    public Double getTinggi() {
+        return tinggi;
+    }
+
+    public void setTinggi(Double tinggi) {
+        this.tinggi = tinggi;
+    }
+
+    public String getPrioritasNest() {
+        return prioritasNest;
+    }
+
+    public void setPrioritasNest(String prioritasNest) {
+        this.prioritasNest = prioritasNest;
     }
 }

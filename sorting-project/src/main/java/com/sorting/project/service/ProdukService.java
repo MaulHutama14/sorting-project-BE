@@ -17,4 +17,8 @@ public class ProdukService {
         return this.produkRepo.findAll();
     }
 
+    public Produk findOneById (String id) {
+        return this.produkRepo.findOneById(id);
+    }
+
 }

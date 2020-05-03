@@ -40,4 +40,8 @@ public class AlatService {
         return this.alatRepo.refreshAlat();
     }
 
+    public Alat findByNamaAlat (String namaAlat) {
+        return this.alatRepo.findByNamaAlat(namaAlat);
+    }
+
 }

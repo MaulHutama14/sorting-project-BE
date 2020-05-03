@@ -17,9 +17,12 @@ import java.util.List;
  * @author PROSIA
  */
 @Repository
-public interface ProdukRepo extends JpaRepository<Produk, Integer>{
+public interface ProdukRepo extends JpaRepository<Produk, String>{
 
     @Query("SELECT p FROM Produk p ORDER BY p.tanggalAkhir ASC")
     public List<Produk> findAll ();
+
+    @Query("SELECT p FROM Produk p WHERE p.id=?1")
+    public Produk findOneById (String id);
     
 }

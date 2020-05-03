@@ -54,5 +54,38 @@ public class ProdukController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @RequestMapping("/add")
+    ResponseEntity<Map<String,Object>> doAdd (@RequestBody Map<String, Object> request) {
+        List<Produk> produkList;
+        Map<String,Object> response = new HashMap<>();
+        try {
+            Object item = request.get("itemTambah");
+            produkList = produkService.findAll();
+            response.put("item",produkList);
+            response.put("success", Boolean.TRUE);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("message", "Gagal mengambil data!");
+            response.put("success", Boolean.FALSE);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @RequestMapping("/edit")
+    ResponseEntity<Map<String,Object>> doEdit (@RequestBody Map<String, Object> request) {
+        List<Produk> produkList;
+        Map<String,Object> response = new HashMap<>();
+        try {
+            produkList = produkService.findAll();
+            response.put("item",produkList);
+            response.put("success", Boolean.TRUE);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("message", "Gagal mengambil data!");
+            response.put("success", Boolean.FALSE);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 
 }

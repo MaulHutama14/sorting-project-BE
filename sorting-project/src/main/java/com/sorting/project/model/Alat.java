@@ -28,8 +28,7 @@ public class Alat implements Serializable{
     
     @Id
     @Column(name="ID")
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer ID;
+    private String ID;
     
     @Column(name="NAMA_ALAT", unique = true,nullable = false, length = 100)
     private String namaAlat;
@@ -52,12 +51,15 @@ public class Alat implements Serializable{
 
     @Column(name="WORK_LOAD")
     private Integer workLoad;
+
+    @Column(name ="STATUS")
+    private Boolean status;
     
-    public Integer getID() {
+    public String getID() {
         return ID;
     }
 
-    public void setID(Integer ID) {
+    public void setID(String ID) {
         this.ID = ID;
     }
 
@@ -117,6 +119,11 @@ public class Alat implements Serializable{
         this.workLoad = workLoad;
     }
 
-    
-   
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
+    }
 }

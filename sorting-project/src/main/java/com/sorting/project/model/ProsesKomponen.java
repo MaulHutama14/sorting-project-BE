@@ -9,6 +9,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -26,13 +27,16 @@ import javax.persistence.Table;
 @Table(name = "TX_PROSES_KOMPONEN")
 public class ProsesKomponen {
 
+    public ProsesKomponen() {
+        this.ID = UUID.randomUUID().toString();
+    }
+
     @Id
     @Column(name = "ID")
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer ID;
+    private String ID;
 
     @Column(name = "DURASI_PROSES")
-    private Integer durasiProses;
+    private Double durasiProses;
 
     @Column(name = "ASSIGN_DATE")
     private Date assignDate;
@@ -55,7 +59,7 @@ public class ProsesKomponen {
     private Proses proses;
 
     @ManyToOne
-    @JoinColumn(name = "NAMA_KOMPONEN", referencedColumnName = "NAMA_KOMPONEN")
+    @JoinColumn(name = "ID_KOMPONEN", referencedColumnName = "ID")
     private Komponen komponen;
 
     @Column(name = "SORT_ID")
@@ -131,19 +135,19 @@ public class ProsesKomponen {
         this.assignDateStr = assignDateStr;
     }
 
-    public Integer getID() {
+    public String getID() {
         return ID;
     }
 
-    public void setID(Integer ID) {
+    public void setID(String ID) {
         this.ID = ID;
     }
 
-    public Integer getDurasiProses() {
+    public Double getDurasiProses() {
         return durasiProses;
     }
 
-    public void setDurasiProses(Integer durasiProses) {
+    public void setDurasiProses(Double durasiProses) {
         this.durasiProses = durasiProses;
     }
 

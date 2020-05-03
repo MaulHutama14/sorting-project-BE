@@ -23,20 +23,19 @@ public class User implements Serializable {
     
     @Id
     @Column(name = "ID")
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
-    
+    private String id;
+
     @Column(name = "USER_NAME", length = 50, nullable = false, unique = true)
     private String username;
     
     @Column(name = "PASSWORD", length = 50, nullable = false)
     private String password;
 
-    public Integer getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(String id) {
         this.id = id;
     }
 

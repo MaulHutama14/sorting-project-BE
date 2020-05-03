@@ -7,6 +7,7 @@ package com.sorting.project.model.master;
 
 import com.sorting.project.model.Alat;
 import java.util.Date;
+import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -23,11 +24,15 @@ import javax.persistence.Table;
 @Entity
 @Table(name="MASTER_TANGGAL_ALAT")
 public class MasterTanggalAlat {
-    
+
+
+    public MasterTanggalAlat() {
+        this.id = UUID.randomUUID().toString();
+    }
+
     @Id
     @Column(name="ID")
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
+    private String id;
     
     @Column(name="TANGGAL_ALAT")
     private Date tanggalAlat;
@@ -52,11 +57,11 @@ public class MasterTanggalAlat {
         this.alat = alat;
     }
 
-    public Integer getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(String id) {
         this.id = id;
     }
     

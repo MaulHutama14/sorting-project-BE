@@ -16,6 +16,9 @@ import org.springframework.stereotype.Repository;
  * @author PROSIA
  */
 @Repository
-public interface KomponenRepo extends JpaRepository<Komponen, Integer>{
-    
+public interface KomponenRepo extends JpaRepository<Komponen, String>{
+
+    @Query("SELECT a FROM Komponen a WHERE a.id=?1")
+    public Komponen findOneById(String id);
+
 }

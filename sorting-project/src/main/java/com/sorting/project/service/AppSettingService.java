@@ -8,6 +8,8 @@ package com.sorting.project.service;
 import com.sorting.project.model.AppSetting;
 import com.sorting.project.repo.AppSettingRepo;
 import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,11 +18,12 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AppSettingService {
-    
+
+    @Autowired
     private AppSettingRepo appSettingRepo;
     
-    public Optional<AppSetting> findById(String appName) {
-        return this.appSettingRepo.findById(appName);
+    public AppSetting findById(String appName) {
+        return this.appSettingRepo.findOneById(appName);
     }
     
 }
