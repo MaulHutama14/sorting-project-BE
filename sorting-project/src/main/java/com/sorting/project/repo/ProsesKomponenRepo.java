@@ -44,12 +44,12 @@ public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Intege
     @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.produk.namaProduk=?1 ORDER BY  tpk.proses.sortId DESC")
     List<ProsesKomponen> findProsesTerakhir(String namaProduk);
     
-    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.isProses=?1 " +
+    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.isProses=?1 AND tpk.komponen.produk.statusProduk=1" +
             " AND (DATE_FORMAT(tpk.assignDate, '%Y-%m-%d') = ?2 " +
             " OR DATE_FORMAT(tpk.assignEnd, '%Y-%m-%d') = ?3 ) ORDER BY  tpk.sortId ASC")
     List<ProsesKomponen> findByHasilSorting(Boolean status, String start, String end);
 
-    @Query("SELECT DISTINCT tpk.komponen.produk.namaProduk FROM ProsesKomponen tpk WHERE tpk.isProses=?1 " +
+    @Query("SELECT DISTINCT tpk.komponen.produk.namaProduk FROM ProsesKomponen tpk WHERE tpk.isProses=?1 AND tpk.komponen.produk.statusProduk=1" +
             " AND (DATE_FORMAT(tpk.assignDate, '%Y-%m-%d') = ?2 " +
             " OR DATE_FORMAT(tpk.assignEnd, '%Y-%m-%d') = ?3 ) ORDER BY  tpk.sortId ASC")
     List<Object[]> findProdukDistinct(Boolean status, String start, String end);
