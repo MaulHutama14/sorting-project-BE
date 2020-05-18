@@ -7,13 +7,10 @@ package com.sorting.project.model;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -67,6 +64,9 @@ public class ProsesKomponen {
 
     @Column(name = "IS_PROSES")
     private Boolean isProses;
+
+    @Column(name = "NOMOR")
+    private Integer nomor;
 
     public void setIsProses(Boolean proses) {
         isProses = proses;
@@ -167,4 +167,11 @@ public class ProsesKomponen {
         this.komponen = komponen;
     }
 
+    public Integer getNomor() {
+        return nomor;
+    }
+
+    public void setNomor(Integer nomor) {
+        this.nomor = nomor;
+    }
 }

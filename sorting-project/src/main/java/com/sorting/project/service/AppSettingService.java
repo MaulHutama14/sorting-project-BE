@@ -12,6 +12,8 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
+
 /**
  *
  * @author PROSIA
@@ -25,5 +27,8 @@ public class AppSettingService {
     public AppSetting findById(String appName) {
         return this.appSettingRepo.findOneById(appName);
     }
+
+    @Transactional
+    public void save (AppSetting appSetting) {appSettingRepo.save(appSetting);}
     
 }

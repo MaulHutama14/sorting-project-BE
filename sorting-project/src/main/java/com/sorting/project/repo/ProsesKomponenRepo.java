@@ -21,17 +21,17 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Integer>{
     
-    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.isAktif=1 GROUP BY tpk.komponen.namaKomponen \n"
+    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 GROUP BY tpk.komponen.id \n"
             + "ORDER BY tpk.komponen.produk.tanggalAkhir ASC, tpk.komponen.prioritas ASC, tpk.komponen.durasiPengerjaan DESC, COUNT(tpk) DESC, tpk.komponen.namaKomponen ASC")
     List<ProsesKomponen> findCuttingByDeadlinePriorWaktuJumProsNama();
     
-    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.namaKomponen=?1 AND tpk.komponen.isAktif=1 ORDER BY tpk.proses.sortId ASC")
+    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.id=?1 AND tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 ORDER BY tpk.proses.sortId ASC, tpk.nomor ASC")
     List<ProsesKomponen> findByProsesAndSortByIdPorses (String idProses, String orderBy);
 
     @Query("SELECT DISTINCT tpk.komponen.namaKomponen FROM ProsesKomponen tpk  ORDER BY tpk.komponen.prioritasNest ASC, tpk.komponen.prioritas ASC")
     List<Object[]> findSortByNest ();
 
-    @Query("SELECT DISTINCT tpk.komponen.namaKomponen FROM ProsesKomponen tpk WHERE tpk.komponen.isAktif=1 ORDER BY tpk.sortId ASC, tpk.proses.sortId ASC")
+    @Query("SELECT DISTINCT tpk.komponen.id FROM ProsesKomponen tpk WHERE tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 ORDER BY tpk.sortId ASC, tpk.proses.sortId ASC")
     List<Object[]> findSortByKomponenAndProses ();
     
     @Modifying
@@ -61,4 +61,17 @@ public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Intege
 
     @Query("SELECT u FROM ProsesKomponen u WHERE u.id=?1")
     public ProsesKomponen findOneById (String id);
+
+    @Query("SELECT CASE WHEN COUNT(x) > 0 THEN true WHEN COUNT(x)=0 THEN false END FROM ProsesKomponen x WHERE x.komponen.id=?1 " +
+            " AND x.proses.id=?2 AND x.nomor=?3")
+    Boolean checkProsesKomponen (String idKomponen, String idProses, Integer numberKomponen);
+
+    @Query("SELECT u FROM ProsesKomponen u WHERE u.komponen.id=?1 " +
+            " AND u.proses.id=?2 AND u.nomor=?3")
+    ProsesKomponen findOneByKompProcNumb (String idKomponen, String idProses, Integer numberKomponen);
+
+    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1" +
+            " ORDER BY  tpk.sortId ASC, tpk.nomor ASC, tpk.proses.sortId ASC")
+    List<ProsesKomponen> findHasilSortingAll();
+
 }

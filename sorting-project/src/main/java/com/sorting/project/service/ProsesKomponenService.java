@@ -5,6 +5,7 @@
  */
 package com.sorting.project.service;
 
+import com.google.gson.Gson;
 import com.sorting.project.model.HistoryProsesKomponen;
 import com.sorting.project.model.ProsesKomponen;
 import com.sorting.project.model.User;
@@ -12,16 +13,13 @@ import com.sorting.project.model.master.TanggalLibur;
 import com.sorting.project.repo.HistoryProsesKompRepo;
 import com.sorting.project.repo.ProsesKomponenRepo;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import javax.transaction.Transactional;
 
 import com.sorting.project.repo.UserRepo;
 import com.sorting.project.repo.master.TglLiburRepo;
-import netscape.javascript.JSObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.stereotype.Service;
 
 /**
@@ -76,7 +74,13 @@ public class ProsesKomponenService {
         List<Object> pesan = new ArrayList<>();
         HistoryProsesKomponen historyProsesKomp =  new HistoryProsesKomponen();
         try {
-            List<ProsesKomponen> itemList = prosesKomponenRepo.findAll();
+            Gson gson = new Gson();
+            String itemList = gson.toJson(prosesKomponenRepo.findHasilSortingAll());
+            historyProsesKomp.setHistoryProsesKomponen(itemList);
+            User user = userRepo.getOne("1");
+            historyProsesKomp.setCreatedBy(user);
+            this.historyProsesKompRepo.save(historyProsesKomp);
+            /*List<ProsesKomponen> itemList = prosesKomponenRepo.findAll();
             StringBuffer itemToBeAdd = new StringBuffer();
             for (int i = 0; i < itemList.size(); i++) {
                 itemToBeAdd.append(itemList.get(i).getID()+";");
@@ -94,7 +98,7 @@ public class ProsesKomponenService {
             item.put("item",itemList);
             historyProsesKomp.setHistoryProsesKomponen(itemToBeAdd.toString());
             historyProsesKomp.setCreatedBy(user);
-            this.historyProsesKompRepo.save(historyProsesKomp);
+            this.historyProsesKompRepo.save(historyProsesKomp);*/
             pesan.add(true);
             pesan.add("BERHASIL");
         } catch (Exception e) {
@@ -160,6 +164,14 @@ public class ProsesKomponenService {
 
     public ProsesKomponen findOneById (String id) {
         return this.prosesKomponenRepo.findOneById(id);
+    }
+
+    public Boolean checkProsesKomponen (String idKomponen, String idProses, Integer numberKomponen) {
+        return this.prosesKomponenRepo.checkProsesKomponen(idKomponen,idProses,numberKomponen);
+    }
+
+    public ProsesKomponen findOneByKompProcNumb(String idKomponen, String idProses, Integer numberKomponen) {
+        return this.prosesKomponenRepo.findOneByKompProcNumb(idKomponen,idProses,numberKomponen);
     }
     
 }

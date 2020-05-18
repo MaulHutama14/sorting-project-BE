@@ -139,61 +139,64 @@ public class KomponenController {
 
                 ProsesKomponen prosesKomponen = new ProsesKomponen();
 
-                if (itemSaved.get(i).get("plm") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "PLM",newKomponen);
-                    if (itemSaved.get(i).get("alatPLM") != null) {
-                        Alat alat = alatService.findByNamaAlat(itemSaved.get(i).get("alatPLM").toString());
-                        prosesKomponen.setAlat(alat);
+                Integer kuantitas = newKomponen.getProduk().getKuantitas();
+                for (int number = 1 ; number <= kuantitas; number++ ) {
+                    if (itemSaved.get(i).get("plm") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "PLM",newKomponen, number);
+                        if (itemSaved.get(i).get("alatPLM") != null) {
+                            Alat alat = alatService.findByNamaAlat(itemSaved.get(i).get("alatPLM").toString());
+                            prosesKomponen.setAlat(alat);
+                        }
+                        prosesKompSaved.add(prosesKomponen);
+                    }   if (itemSaved.get(i).get("et") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "ET",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }   if (itemSaved.get(i).get("sgc") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "SGC",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }   if (itemSaved.get(i).get("bvl") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "BVL",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }   if (itemSaved.get(i).get("bs") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "BS",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }   if (itemSaved.get(i).get("hgc") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "HGC",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }   if (itemSaved.get(i).get("agc") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "AGC",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }   if (itemSaved.get(i).get("stp") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "STP",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }   if (itemSaved.get(i).get("hpp") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "HPP",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }   if (itemSaved.get(i).get("bpb") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "BPB",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }   if (itemSaved.get(i).get("rb") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "RB",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }  if (itemSaved.get(i).get("rd") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "RD",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }  if (itemSaved.get(i).get("td") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "TD",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }  if (itemSaved.get(i).get("hb") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "HB",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }  if (itemSaved.get(i).get("gl") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "GL",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }  if (itemSaved.get(i).get("lb") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "LB",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
+                    }  if (itemSaved.get(i).get("gr") != null) {
+                        prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "GR",newKomponen, number);
+                        prosesKompSaved.add(prosesKomponen);
                     }
-                    prosesKompSaved.add(prosesKomponen);
-                }   if (itemSaved.get(i).get("et") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "ET",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }   if (itemSaved.get(i).get("sgc") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "SGC",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }   if (itemSaved.get(i).get("bvl") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "BVL",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }   if (itemSaved.get(i).get("bs") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "BS",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }   if (itemSaved.get(i).get("hgc") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "HGC",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }   if (itemSaved.get(i).get("agc") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "AGC",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }   if (itemSaved.get(i).get("stp") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "STP",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }   if (itemSaved.get(i).get("hpp") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "HPP",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }   if (itemSaved.get(i).get("bpb") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "BPB",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }   if (itemSaved.get(i).get("rb") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "RB",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }  if (itemSaved.get(i).get("rd") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "RD",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }  if (itemSaved.get(i).get("td") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "TD",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }  if (itemSaved.get(i).get("hb") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "HB",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }  if (itemSaved.get(i).get("gl") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "GL",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }  if (itemSaved.get(i).get("lb") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "LB",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
-                }  if (itemSaved.get(i).get("gr") != null) {
-                    prosesKomponen = checkProsesKomp(itemSaved.get(i),prosesKomponensList, "GR",newKomponen);
-                    prosesKompSaved.add(prosesKomponen);
                 }
             }
             if (prosesKompSaved.size() != 0) {
@@ -209,27 +212,25 @@ public class KomponenController {
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
-    private ProsesKomponen checkProsesKomp (Map<String, Object> item, List<ProsesKomponen>prosesKomponensList, String proses, Komponen komponen) {
+    private ProsesKomponen checkProsesKomp (Map<String, Object> item, List<ProsesKomponen>prosesKomponensList, String proses, Komponen komponen, Integer number) {
         ProsesKomponen newProsesKomp = new ProsesKomponen();
         Boolean baru = true;
-        for (int j = 0; j < prosesKomponensList.size(); j++) {
-            if (komponen.getId().equalsIgnoreCase(prosesKomponensList.get(j).getKomponen().getId())
-            && proses.equalsIgnoreCase(prosesKomponensList.get(j).getProses().getNamaProses())) {
-                baru = false;
-                newProsesKomp = prosesKomponensList.get(j);
-                newProsesKomp.setIsProses(false);
-                newProsesKomp.setProses(this.prosesService.findOneById(proses));
-                newProsesKomp.setKomponen(komponen);
-                newProsesKomp.setDurasiProses(Double.parseDouble(item.get(proses.toLowerCase()).toString()));
-                break;
-            }
+        if (prosesKomponenService.checkProsesKomponen(komponen.getId(), proses, number)) {
+            baru = false;
+            newProsesKomp =this.prosesKomponenService.findOneByKompProcNumb(komponen.getId(), proses, number);
+            newProsesKomp.setIsProses(false);
+            newProsesKomp.setNomor(number);
+            newProsesKomp.setProses(this.prosesService.findOneById(proses));
+            newProsesKomp.setKomponen(komponen);
+            newProsesKomp.setDurasiProses(Double.parseDouble(item.get(proses.toLowerCase()).toString()));
         }
 
         if (baru) {
-                newProsesKomp.setIsProses(false);
-                newProsesKomp.setProses(this.prosesService.findOneById(proses));
-                newProsesKomp.setKomponen(komponen);
-                newProsesKomp.setDurasiProses(Double.parseDouble(item.get(proses.toLowerCase()).toString()));
+            newProsesKomp.setIsProses(false);
+            newProsesKomp.setProses(this.prosesService.findOneById(proses));
+            newProsesKomp.setKomponen(komponen);
+            newProsesKomp.setNomor(number);
+            newProsesKomp.setDurasiProses(Double.parseDouble(item.get(proses.toLowerCase()).toString()));
         }
         return newProsesKomp;
     }

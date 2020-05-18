@@ -24,7 +24,7 @@ public interface AlatRepo extends JpaRepository<Alat, Integer> {
     List<Alat> findOneByMasterDescIsNull(String idProses);
     
     @Query("SELECT a FROM Alat a WHERE a.masterAlat.proses.id = ?1 AND a.tanggalAssign IS NOT NULL AND a.status = 1"
-            + " ORDER BY a.tanggalAssign DESC, a.workLoad ASC")
+            + " ORDER BY a.tanggalAssign ASC, a.workLoad ASC")
     List<Alat> findOneByMasterDescIsNotNull(String idProses);
 
     @Modifying
