@@ -21,4 +21,8 @@ public interface KomponenRepo extends JpaRepository<Komponen, String>{
     @Query("SELECT a FROM Komponen a WHERE a.id=?1")
     public Komponen findOneById(String id);
 
+    @Query("SELECT a FROM Komponen a WHERE a.namaKomponen=?1 AND a.produk.namaProduk=?2")
+    Komponen findByNameAndProdukName (String komponenName, String produkId);
+
+
 }

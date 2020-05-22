@@ -68,6 +68,9 @@ public class ProsesKomponen {
     @Column(name = "NOMOR")
     private Integer nomor;
 
+    @Column(name = "IS_AKTIF")
+    private Boolean isAktif;
+
     public void setIsProses(Boolean proses) {
         isProses = proses;
     }
@@ -173,5 +176,13 @@ public class ProsesKomponen {
 
     public void setNomor(Integer nomor) {
         this.nomor = nomor;
+    }
+
+    public Boolean getAktif() {
+        return isAktif;
+    }
+
+    public void setAktif(Boolean aktif) {
+        isAktif = aktif;
     }
 }

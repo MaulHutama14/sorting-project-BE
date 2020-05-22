@@ -42,5 +42,9 @@ public class KomponenService {
         
         return this.komponenRepo.findAll(Sort.by(orderList));
     }
+
+    public Komponen findByNameAndProdukName (String namaKomponnen, String namaProduk) {
+        return komponenRepo.findByNameAndProdukName(namaKomponnen,namaProduk);
+    }
     
 }

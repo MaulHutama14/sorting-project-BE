@@ -45,6 +45,11 @@ public class ProsesKomponenService {
         return this.prosesKomponenRepo.findAll();
     }
 
+    @Transactional
+    public void nonAktifSemuaByProduk( String produkId) {
+        prosesKomponenRepo.nonAktifSemuaByProduk(produkId);
+    }
+
     public List<TanggalLibur> findAllLibur () {
         return this.tglLiburRepo.findAll();
     }

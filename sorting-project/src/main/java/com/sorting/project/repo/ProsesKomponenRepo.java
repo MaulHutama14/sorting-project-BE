@@ -74,4 +74,8 @@ public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Intege
             " ORDER BY  tpk.sortId ASC, tpk.nomor ASC, tpk.proses.sortId ASC")
     List<ProsesKomponen> findHasilSortingAll();
 
+    @Modifying
+    @Query("UPDATE ProsesKomponen tpk SET tpk.isAktif=0 WHERE tpk.komponen.produk.id=?1")
+    void nonAktifSemuaByProduk (String idProduk);
+
 }
