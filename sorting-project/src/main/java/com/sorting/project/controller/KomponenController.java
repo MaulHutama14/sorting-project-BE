@@ -94,7 +94,7 @@ public class KomponenController {
 
             List<Map<String,Object>> itemSaved = (List<Map<String,Object>>) request.get("item");
             Produk produk = produkService.findOneById(request.get("produk").toString());
-            prosesKomponenService.nonAktifSemuaByProduk(produk.getId());
+            prosesKomponenService.nonAktifSemuaByProduk(produk.getNamaProduk());
             List<ProsesKomponen> prosesKompSaved = new ArrayList<>();
             Komponen newKomponen;
             for (int i = 0; i < itemSaved.size(); i++) {
@@ -220,7 +220,7 @@ public class KomponenController {
             newProsesKomp.setProses(this.prosesService.findOneById(proses));
             newProsesKomp.setKomponen(komponen);
             newProsesKomp.setDurasiProses(Double.parseDouble(item.get(proses.toLowerCase()).toString()));
-            newProsesKomp.setAktif(true);
+            newProsesKomp.setIsAktif(true);
         }
 
         if (baru) {
@@ -229,7 +229,7 @@ public class KomponenController {
             newProsesKomp.setKomponen(komponen);
             newProsesKomp.setNomor(number);
             newProsesKomp.setDurasiProses(Double.parseDouble(item.get(proses.toLowerCase()).toString()));
-            newProsesKomp.setAktif(true);
+            newProsesKomp.setIsAktif(true);
         }
         return newProsesKomp;
     }

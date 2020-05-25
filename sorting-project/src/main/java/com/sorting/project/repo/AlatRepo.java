@@ -27,6 +27,9 @@ public interface AlatRepo extends JpaRepository<Alat, Integer> {
             + " ORDER BY a.tanggalAssign ASC, a.workLoad ASC")
     List<Alat> findOneByMasterDescIsNotNull(String idProses);
 
+    @Query("SELECT a FROM Alat a WHERE a.status=1")
+    List<Alat> findAllActive ();
+
     @Modifying
     @Query("UPDATE Alat a SET a.tanggalAssign=null, a.workLoad=0")
     int refreshAlat();

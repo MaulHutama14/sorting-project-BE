@@ -178,11 +178,11 @@ public class ProsesKomponen {
         this.nomor = nomor;
     }
 
-    public Boolean getAktif() {
+    public Boolean getIsAktif() {
         return isAktif;
     }
 
-    public void setAktif(Boolean aktif) {
+    public void setIsAktif(Boolean aktif) {
         isAktif = aktif;
     }
 }

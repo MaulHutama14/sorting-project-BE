@@ -22,6 +22,10 @@ public class AlatService {
     @Autowired
     private AlatRepo alatRepo;
 
+    public List<Alat> findAllActive () {
+        return this.alatRepo.findAllActive();
+    }
+
     public List<Alat> findOneByMasterDescIsNotNull(String idProses) {
         return this.alatRepo.findOneByMasterDescIsNotNull(idProses);
     }

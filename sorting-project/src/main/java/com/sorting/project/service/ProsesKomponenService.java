@@ -19,7 +19,6 @@ import javax.transaction.Transactional;
 import com.sorting.project.repo.UserRepo;
 import com.sorting.project.repo.master.TglLiburRepo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.stereotype.Service;
 
 /**
@@ -120,8 +119,8 @@ public class ProsesKomponenService {
         return this.prosesKomponenRepo.findCuttingByDeadlinePriorWaktuJumProsNama();
     }
     
-    public List<ProsesKomponen> findByProsesAndSortByIdPorses (String idProses, String orderBy){
-        return this.prosesKomponenRepo.findByProsesAndSortByIdPorses(idProses, orderBy);
+    public List<ProsesKomponen> findByIdProsesKomponen(String idProses, String orderBy){
+        return this.prosesKomponenRepo.findByIdProsesKomponen(idProses, orderBy);
     }
 
     public List<Object[]> findSortByKomponenAndProses () {

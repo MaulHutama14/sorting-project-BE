@@ -21,21 +21,23 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Integer>{
     
-    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 GROUP BY tpk.komponen.id \n"
-            + "ORDER BY tpk.komponen.produk.tanggalAkhir ASC, tpk.komponen.prioritas ASC, tpk.komponen.durasiPengerjaan DESC, COUNT(tpk) DESC, tpk.komponen.namaKomponen ASC")
+    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 \n"
+            + "ORDER BY tpk.komponen.prioritas ASC, tpk.durasiProses ASC, tpk.komponen.namaKomponen ASC")
     List<ProsesKomponen> findCuttingByDeadlinePriorWaktuJumProsNama();
     
-    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.id=?1 AND tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 ORDER BY tpk.proses.sortId ASC, tpk.nomor ASC")
-    List<ProsesKomponen> findByProsesAndSortByIdPorses (String idProses, String orderBy);
+    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.id=?1 AND tpk.isAktif=1  AND tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 ORDER BY tpk.proses.sortId ASC, tpk.nomor ASC")
+    List<ProsesKomponen> findByIdProsesKomponen(String idProses, String orderBy);
 
-    @Query("SELECT DISTINCT tpk.komponen.namaKomponen FROM ProsesKomponen tpk  ORDER BY tpk.komponen.prioritasNest ASC, tpk.komponen.prioritas ASC")
+    @Query("SELECT DISTINCT tpk.komponen.namaKomponen FROM ProsesKomponen tpk WHERE tpk.isAktif=1 AND tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1" +
+            " ORDER BY tpk.komponen.prioritasNest ASC, tpk.komponen.prioritas ASC, tpk.durasiProses ASC, tpk.komponen.namaKomponen ASC")
     List<Object[]> findSortByNest ();
 
-    @Query("SELECT DISTINCT tpk.komponen.id FROM ProsesKomponen tpk WHERE tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 ORDER BY tpk.sortId ASC, tpk.proses.sortId ASC")
+    @Query("SELECT DISTINCT tpk.komponen.id FROM ProsesKomponen tpk WHERE tpk.isAktif=1 AND tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 " +
+            " ORDER BY  tpk.komponen.prioritas ASC, tpk.durasiProses ASC, tpk.komponen.namaKomponen ASC")
     List<Object[]> findSortByKomponenAndProses ();
     
     @Modifying
-    @Query("UPDATE ProsesKomponen tpk SET tpk.assignDate=null, tpk.assignDateStr=null,tpk.assignEnd=null, tpk.assignEndStr=null, tpk.alat=null")
+    @Query("UPDATE ProsesKomponen tpk SET tpk.assignDate=null, tpk.assignDateStr=null,tpk.assignEnd=null, tpk.assignEndStr=null, tpk.alat=null WHERE tpk.proses.id!='PLM'")
     void refreshAssignedDate();
     
     @Query("SELECT DISTINCT tpk.komponen.produk.namaProduk FROM ProsesKomponen tpk ORDER BY tpk.komponen.produk.tanggalAkhir ASC")
@@ -44,14 +46,14 @@ public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Intege
     @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.produk.namaProduk=?1 ORDER BY  tpk.proses.sortId DESC")
     List<ProsesKomponen> findProsesTerakhir(String namaProduk);
     
-    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.isProses=?1 AND tpk.komponen.produk.statusProduk=1" +
+    @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.isProses=?1 AND tpk.isAktif=1 AND tpk.komponen.produk.statusProduk=1" +
             " AND (DATE_FORMAT(tpk.assignDate, '%Y-%m-%d') = ?2 " +
-            " OR DATE_FORMAT(tpk.assignEnd, '%Y-%m-%d') = ?3 ) ORDER BY  tpk.sortId ASC")
+            " OR DATE_FORMAT(tpk.assignEnd, '%Y-%m-%d') = ?3 ) ORDER BY  tpk.sortId ASC, tpk.proses.sortId ASC")
     List<ProsesKomponen> findByHasilSorting(Boolean status, String start, String end);
 
-    @Query("SELECT DISTINCT tpk.komponen.produk.namaProduk FROM ProsesKomponen tpk WHERE tpk.isProses=?1 AND tpk.komponen.produk.statusProduk=1" +
+    @Query("SELECT DISTINCT tpk.komponen.produk.namaProduk FROM ProsesKomponen tpk WHERE tpk.isProses=?1 AND tpk.isAktif=1 AND tpk.komponen.produk.statusProduk=1" +
             " AND (DATE_FORMAT(tpk.assignDate, '%Y-%m-%d') = ?2 " +
-            " OR DATE_FORMAT(tpk.assignEnd, '%Y-%m-%d') = ?3 ) ORDER BY  tpk.sortId ASC")
+            " OR DATE_FORMAT(tpk.assignEnd, '%Y-%m-%d') = ?3 ) ORDER BY  tpk.sortId ASC, tpk.proses.sortId ASC")
     List<Object[]> findProdukDistinct(Boolean status, String start, String end);
 
     @Query("SELECT tpk FROM ProsesKomponen tpk\n" +
@@ -75,7 +77,9 @@ public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Intege
     List<ProsesKomponen> findHasilSortingAll();
 
     @Modifying
-    @Query("UPDATE ProsesKomponen tpk SET tpk.isAktif=0 WHERE tpk.komponen.produk.id=?1")
+    @Query(value = "UPDATE tx_proses_komponen tpk JOIN tx_komponen k ON k.id=tpk.id_komponen " +
+            " JOIN tx_produk p ON p.nama_produk=k.master_nama_produk" +
+            " SET tpk.is_aktif=false WHERE p.nama_produk=?1", nativeQuery = true)
     void nonAktifSemuaByProduk (String idProduk);
 
 }
