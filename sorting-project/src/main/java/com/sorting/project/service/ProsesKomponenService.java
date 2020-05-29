@@ -177,5 +177,10 @@ public class ProsesKomponenService {
     public ProsesKomponen findOneByKompProcNumb(String idKomponen, String idProses, Integer numberKomponen) {
         return this.prosesKomponenRepo.findOneByKompProcNumb(idKomponen,idProses,numberKomponen);
     }
+
+    @Transactional
+    public void editStatusPengerjaan (Boolean status, List<String> listId) {
+        prosesKomponenRepo.updateStatusPengerjaan(status, listId);
+    }
     
 }

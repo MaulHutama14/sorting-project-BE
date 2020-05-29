@@ -209,6 +209,29 @@ public class KomponenController {
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
+    @RequestMapping("/edit-pengerjaan")
+    ResponseEntity<Map<String,Object>> doEditPengerjaan (@RequestBody Map<String, Object> request) {
+        Map<String,Object> response = new HashMap<>();
+
+        try {
+            List<String> listIdProses = (List<String>) request.get("list_id");
+            Boolean status = Boolean.parseBoolean(request.get("status").toString());
+
+            prosesKomponenService.editStatusPengerjaan(status, listIdProses);
+            response.put("message","Berhasil edit data komponen!");
+            response.put("result",true);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            response.put("message","Parameter request ada yang salah!");
+            response.put("result",false);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("message","Gagal edit data komponen!");
+            response.put("result",false);
+        }
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
     private ProsesKomponen checkProsesKomp (Map<String, Object> item, String proses, Komponen komponen, Integer number) {
         ProsesKomponen newProsesKomp = new ProsesKomponen();
         Boolean baru = true;

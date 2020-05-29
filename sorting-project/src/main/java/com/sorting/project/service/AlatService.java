@@ -48,4 +48,8 @@ public class AlatService {
         return this.alatRepo.findByNamaAlat(namaAlat);
     }
 
+    public List<Alat> findByMasterNamaAlat (String namaMasterAlat) {
+        return  alatRepo.findByMasterNamaAlat(namaMasterAlat);
+    }
+
 }

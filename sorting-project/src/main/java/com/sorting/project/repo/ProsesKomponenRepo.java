@@ -57,8 +57,8 @@ public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Intege
     List<Object[]> findProdukDistinct(Boolean status, String start, String end);
 
     @Query("SELECT tpk FROM ProsesKomponen tpk\n" +
-            "WHERE tpk.komponen.produk.namaProduk=?1 \n" +
-            "ORDER BY tpk.sortId ASC, tpk.proses.sortId ASC")
+            "WHERE tpk.komponen.produk.namaProduk=?1 AND tpk.isAktif=1 \n" +
+            "ORDER BY tpk.nomor ASC, tpk.sortId ASC, tpk.proses.sortId ASC")
     List<ProsesKomponen> findByProduk(String namaProduk);
 
     @Query("SELECT u FROM ProsesKomponen u WHERE u.id=?1")
@@ -81,5 +81,9 @@ public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Intege
             " JOIN tx_produk p ON p.nama_produk=k.master_nama_produk" +
             " SET tpk.is_aktif=false WHERE p.nama_produk=?1", nativeQuery = true)
     void nonAktifSemuaByProduk (String idProduk);
+
+    @Modifying
+    @Query("UPDATE ProsesKomponen tpk SET tpk.isProses=?1 WHERE tpk.id IN ?2 ")
+    void updateStatusPengerjaan (Boolean status, List<String> id);
 
 }

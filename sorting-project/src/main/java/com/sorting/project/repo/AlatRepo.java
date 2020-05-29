@@ -37,4 +37,7 @@ public interface AlatRepo extends JpaRepository<Alat, Integer> {
     @Query("SELECT a FROM Alat a WHERE a.namaAlat = ?1")
     Alat findByNamaAlat (String namaAlat);
 
+    @Query("SELECT a FROM Alat a WHERE a.masterAlat.namaMasterAlat=?1")
+    List<Alat> findByMasterNamaAlat (String namaMasterAlat);
+
 }
