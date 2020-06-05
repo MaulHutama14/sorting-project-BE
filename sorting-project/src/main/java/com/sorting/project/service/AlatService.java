@@ -52,4 +52,9 @@ public class AlatService {
         return  alatRepo.findByMasterNamaAlat(namaMasterAlat);
     }
 
+    @Transactional
+    public void editStatus(Boolean status, List<String> idAlat) {
+        alatRepo.editStatus(status, idAlat);
+    }
+
 }

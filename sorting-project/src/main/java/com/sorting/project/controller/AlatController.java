@@ -1,8 +1,10 @@
 package com.sorting.project.controller;
 
 import com.sorting.project.model.Alat;
+import com.sorting.project.model.MasterAlat;
 import com.sorting.project.model.Produk;
 import com.sorting.project.service.AlatService;
+import com.sorting.project.service.MasterAlatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,9 @@ public class AlatController {
 
     @Autowired
     private AlatService alatService;
+
+    @Autowired
+    private MasterAlatService masterAlatService;
 
     @RequestMapping("/list")
     ResponseEntity<Map<String,Object>> doList (@RequestBody Map<String, Object> request) {
@@ -55,6 +60,60 @@ public class AlatController {
             response.put("success", Boolean.FALSE);
         }
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @RequestMapping("/edit-pengerjaan")
+    ResponseEntity<Map<String,Object>> doEditPengerjaan (@RequestBody Map<String, Object> request) {
+        Map<String,Object> response = new HashMap<>();
+
+        try {
+            List<String> listIdAlat = (List<String>) request.get("list_id");
+            Boolean status = Boolean.parseBoolean(request.get("status").toString());
+
+            alatService.editStatus(status, listIdAlat);
+            response.put("message","Berhasil ubah status Alat!");
+            response.put("result",true);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            response.put("message","Parameter request ada yang salah!");
+            response.put("result",false);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("message","Gagal ubah status Alat!");
+            response.put("result",false);
+        }
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
+    @RequestMapping("/do-add")
+    ResponseEntity<Map<String,Object>> doAdd (@RequestBody Map<String, Object> request) {
+        Map<String,Object> response = new HashMap<>();
+
+        try {
+            Map<String, Object> listIdAlat = (Map<String,Object>) request.get("item");
+            String namaAlat = listIdAlat.get("namaAlat").toString();
+            String deskripsi = listIdAlat.get("deskripsi").toString();
+            Boolean status = Boolean.parseBoolean(listIdAlat.get("status").toString());
+            MasterAlat masterAlat = masterAlatService.findById(Integer.parseInt(listIdAlat.get("idMasterAlat").toString()));
+            Alat alat = new Alat();
+            alat.setNamaAlat(namaAlat);
+            alat.setDeskAlat(deskripsi);
+            alat.setMasterAlat(masterAlat);
+            alat.setStatus(status);
+
+            alatService.save(alat);
+            response.put("message","Berhasil tambah Alat!");
+            response.put("result",true);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            response.put("message","Parameter request ada yang salah!");
+            response.put("result",false);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("message","Gagal tambah Alat!");
+            response.put("result",false);
+        }
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
 

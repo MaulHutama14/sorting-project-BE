@@ -40,4 +40,8 @@ public interface AlatRepo extends JpaRepository<Alat, Integer> {
     @Query("SELECT a FROM Alat a WHERE a.masterAlat.namaMasterAlat=?1")
     List<Alat> findByMasterNamaAlat (String namaMasterAlat);
 
+    @Modifying
+    @Query("UPDATE Alat a SET a.status=?1 WHERE a.id IN ?2")
+    void editStatus(Boolean status, List<String> idAlat);
+
 }

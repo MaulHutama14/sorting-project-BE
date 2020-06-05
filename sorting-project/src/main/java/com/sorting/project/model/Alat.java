@@ -8,6 +8,7 @@ package com.sorting.project.model;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,7 +26,11 @@ import org.hibernate.annotations.GeneratorType;
 @Entity
 @Table(name = "TM_ALAT")
 public class Alat implements Serializable{
-    
+
+    public Alat() {
+        this.ID = UUID.randomUUID().toString();
+    }
+
     @Id
     @Column(name="ID")
     private String ID;

@@ -5,6 +5,7 @@
  */
 package com.sorting.project.service;
 
+import com.sorting.project.model.MasterAlat;
 import com.sorting.project.repo.MasterAlatRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,10 @@ public class MasterAlatService {
     
     public void deleteAll(){
         this.masterAlatRepo.deleteAll();
+    }
+
+    public MasterAlat findById (Integer id) {
+        return masterAlatRepo.findById(id).get();
     }
     
 }

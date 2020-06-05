@@ -10,12 +10,15 @@
 	</parent>
 	<groupId>com.sorting.project</groupId>
 	<artifactId>sorting-project</artifactId>
-	<version>0.0.1-DEMO</version>
+	<version>0.0.1</version>
 	<name>sorting-project</name>
 	<description>For sorting project</description>
+	<packaging>war</packaging>
 
 	<properties>
 		<java.version>1.8</java.version>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<maven.compiler.source>1.8</maven.compiler.source>
 	</properties>
 
 	<dependencies>
@@ -62,13 +65,24 @@
 	</dependencies>
 
 	<build>
+		<finalName>sorting-project</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+						<configuration>
+							<mainClass>com.sorting.project.SortingProjectApplication</mainClass>
+							<outputDirectory>${project.basedir}/docker</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
-                
 	</build>
 
 </project>

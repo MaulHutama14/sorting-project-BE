@@ -182,5 +182,9 @@ public class ProsesKomponenService {
     public void editStatusPengerjaan (Boolean status, List<String> listId) {
         prosesKomponenRepo.updateStatusPengerjaan(status, listId);
     }
+
+    public List<Object[]> getHasilSorting( ) {
+        return prosesKomponenRepo.getHasilSorting();
+    }
     
 }

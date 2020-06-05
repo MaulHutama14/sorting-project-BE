@@ -22,7 +22,7 @@ import org.springframework.stereotype.Repository;
 public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Integer>{
     
     @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 \n"
-            + "ORDER BY tpk.komponen.prioritas ASC, tpk.durasiProses ASC, tpk.komponen.namaKomponen ASC")
+            + "ORDER BY tpk.komponen.prioritas ASC")
     List<ProsesKomponen> findCuttingByDeadlinePriorWaktuJumProsNama();
     
     @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.id=?1 AND tpk.isAktif=1  AND tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 ORDER BY tpk.proses.sortId ASC, tpk.nomor ASC")
@@ -33,7 +33,7 @@ public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Intege
     List<Object[]> findSortByNest ();
 
     @Query("SELECT DISTINCT tpk.komponen.id FROM ProsesKomponen tpk WHERE tpk.isAktif=1 AND tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 " +
-            " ORDER BY  tpk.komponen.prioritas ASC, tpk.durasiProses ASC, tpk.komponen.namaKomponen ASC")
+            " ORDER BY  tpk.komponen.prioritas ASC")
     List<Object[]> findSortByKomponenAndProses ();
     
     @Modifying
@@ -85,5 +85,12 @@ public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Intege
     @Modifying
     @Query("UPDATE ProsesKomponen tpk SET tpk.isProses=?1 WHERE tpk.id IN ?2 ")
     void updateStatusPengerjaan (Boolean status, List<String> id);
+
+    @Query("SELECT tpk.nomor, tpk.assignDate, tpk.assignEnd, tpk.komponen.namaKomponen, " +
+            " tpk.komponen.produk.namaProduk, tpk.alat.namaAlat, tpk.proses.namaProses" +
+            " FROM ProsesKomponen tpk" +
+            " WHERE tpk.isAktif=1" +
+            " ORDER BY tpk.sortId ASC, tpk.nomor ASC, tpk.proses.sortId ASC")
+    List<Object[]> getHasilSorting() ;
 
 }

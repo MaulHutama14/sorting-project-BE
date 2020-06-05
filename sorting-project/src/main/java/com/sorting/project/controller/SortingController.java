@@ -107,6 +107,7 @@ public class SortingController {
         String proses = "CHECK";
         Date minDate = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy hh:mm");
+        SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd hh:mm");
         Boolean is2shift;
         List<Alat> listAlat;
         List<Object[]> itemList = new ArrayList<>();
@@ -115,11 +116,12 @@ public class SortingController {
         for (Object item : itemList) {
             Map<String,Object> itemAdd = (Map<String, Object>) item;
             Date[] itemToBeAdd = {
-                    sdf.parse(itemAdd.get("tanggal_mulai").toString()),
-                    sdf.parse(itemAdd.get("tanggal_akhir").toString())
+                    sdf2.parse(itemAdd.get("tanggal_mulai").toString() + " 00:00"),
+                    sdf2.parse(itemAdd.get("tanggal_akhir").toString() + " 23:59")
             };
             tglSingleShift.add(itemToBeAdd);
         }
+        Date dt = sdf2.parse(request.get("tanggal_selesai").toString() + " " + request.get("jam_selesai").toString());
 
         try {
             this.alatService.refreshAlat();
@@ -174,7 +176,7 @@ public class SortingController {
                 }
 
                 if (j == sizeJ && i == sizeI) { // untuk proses komponen yang paling akhir
-                        batasAkhir = produk.getTanggalAkhir();
+                        batasAkhir = dt;
                 } else if (j < produk.getKuantitas() && listKomponenDiSortir.size() > produk.getKuantitas()) {
                         ProsesKomponen prosesSebelumnya = listKomponenDiSortir.get(j + produk.getKuantitas());
                         if (alat.getTanggalAssign() != null
@@ -185,13 +187,23 @@ public class SortingController {
                         } else {
                             batasAkhir = prosesSebelumnya.getAssignDate();
                         }
-                } else {
-                    if (alat.getTanggalAssign() != null &&
-                            (alat.getTanggalAssign().before(produk.getTanggalAkhir())
-                                    ||alat.getTanggalAssign().equals(produk.getTanggalAkhir()))) {
+                } else if (sizeJ != 1 && j != sizeJ){
+                    ProsesKomponen prosesSebelumnya = listKomponenDiSortir.get(j + 1);
+                    if (alat.getTanggalAssign() != null
+                            &&
+                            (alat.getTanggalAssign().before(prosesSebelumnya.getAssignDate())
+                                    ||alat.getTanggalAssign().equals(prosesSebelumnya.getAssignDate()))) {
                         batasAkhir = alat.getTanggalAssign();
                     } else {
-                        batasAkhir = produk.getTanggalAkhir();
+                        batasAkhir = prosesSebelumnya.getAssignDate();
+                    }
+                } else {
+                    if (alat.getTanggalAssign() != null &&
+                            (alat.getTanggalAssign().before(dt)
+                                    ||alat.getTanggalAssign().equals(dt))) {
+                        batasAkhir = alat.getTanggalAssign();
+                    } else {
+                        batasAkhir = dt;
                     }
                 }
 
@@ -200,6 +212,7 @@ public class SortingController {
 
                 akanDiAssign.setAssignEnd(batasAkhir);
                 akanDiAssign = checkAssignDateV2(akanDiAssign, is2shift, tglLiburList);
+                listKomponenDiSortir.set(j, akanDiAssign);
                 listAlat.get(index).setTanggalAssign(akanDiAssign.getAssignDate());
 
                 if (temp ==null) {
@@ -691,6 +704,8 @@ public class SortingController {
                 || tglMulai.getTime().compareTo(shift2CFBMulai.getTime()) <= 0 ) {
             if (tglMulai.getTime().compareTo(shift2IstirhahatAkhir.getTime()) >= 0) {
                 shift2CFBMulai.add(Calendar.DATE,1);
+                shift2CFBAkhir.add(Calendar.DATE,1);
+                shift2JamAkhir.add(Calendar.DATE,1);
                 batasAkhir = shift2CFBMulai;
             } else {
                 batasAkhir = shift2CFBMulai;
@@ -770,8 +785,6 @@ public class SortingController {
                 case "04":
                     if (needExtraTime) {
                         status = "05";
-                        shift2CFBAkhir.add(Calendar.DATE,1);
-                        shift2JamAkhir.add(Calendar.DATE,1);
                         tglMulai = shift2CFBAkhir;
                         batasAkhir = shift2JamAkhir;
                         jamMulaiKerja =  setBatasTanggal(tglMulai.getTime()).get(0);
@@ -1084,6 +1097,25 @@ public class SortingController {
         calendars.add(shift2JamAkhir);
 
         return  calendars;
+    }
+
+    @RequestMapping("/download-sorting")
+    public ResponseEntity<Map<String, Object>> doDownload(@RequestBody Map<String, Object> request) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            List<Object[]> listItem = prosesKomponenService.getHasilSorting();
+            result.put("success",true);
+            result.put("item",listItem);
+            result.put("message", "Berhasil mendapatkan hasil sorting!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("success",false);
+            result.put("message","Gagal mendapatkan hasil sorting!");
+            return new ResponseEntity<>(result, HttpStatus.EXPECTATION_FAILED);
+        }
+        result.put("success", true);
+        return new ResponseEntity<>(result, HttpStatus.OK);
+
     }
 
 }
