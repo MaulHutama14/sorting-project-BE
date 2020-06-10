@@ -46,5 +46,10 @@ public class KomponenService {
     public Komponen findByNameAndProdukName (String namaKomponnen, String namaProduk) {
         return komponenRepo.findByNameAndProdukName(namaKomponnen,namaProduk);
     }
+
+    @Transactional
+    public void updateStatusAktif (Boolean status, List<String> id) {
+        komponenRepo.updateStatusAktif (status,  id);
+    }
     
 }

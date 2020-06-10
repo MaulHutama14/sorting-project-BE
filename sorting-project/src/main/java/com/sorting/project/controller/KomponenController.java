@@ -65,19 +65,16 @@ public class KomponenController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @RequestMapping("/edit")
+    @RequestMapping("/edit-komponen")
     ResponseEntity<Map<String,Object>> doEdit (@RequestBody Map<String, Object> request) {
         Map<String,Object> response = new HashMap<>();
 
         try {
-            Komponen komponen = this.komponenService.findOneById(request.get("id").toString());
-            if (komponen.getAktif()) {
-                komponen.setAktif(false);
-            } else {
-                komponen.setAktif(true);
-            }
-            this.komponenService.save(komponen);
-            response.put("message","Berhasil edit data komponen!");
+            List<String> listIdProses = (List<String>) request.get("id");
+            Boolean status = Boolean.parseBoolean(request.get("status").toString());
+
+            komponenService.updateStatusAktif(status, listIdProses);
+            response.put("message","Berhasil edit status komponen!");
             response.put("result",true);
         } catch (Exception e) {
             e.printStackTrace();
@@ -114,6 +111,9 @@ public class KomponenController {
                         newKomponen.setProduk(produk);
                         newKomponen.setNamaKomponen(itemSaved.get(i).get("namaKomponen").toString());
                         newKomponen.setPrioritas(itemSaved.get(i).get("prioritas").toString());
+                        if (itemSaved.get(i).get("nest") != null) {
+                            newKomponen.setPrioritasNest(itemSaved.get(i).get("nest").toString());
+                        }
                         this.komponenService.save(newKomponen);
                     }
 
@@ -130,7 +130,9 @@ public class KomponenController {
                     newKomponen.setProduk(produk);
                     newKomponen.setNamaKomponen(itemSaved.get(i).get("namaKomponen").toString());
                     newKomponen.setPrioritas(itemSaved.get(i).get("prioritas").toString());
-
+                    if (itemSaved.get(i).get("nest") != null) {
+                        newKomponen.setPrioritasNest(itemSaved.get(i).get("nest").toString());
+                    }
                     this.komponenService.save(newKomponen);
                 }
 
@@ -215,6 +217,7 @@ public class KomponenController {
 
         try {
             List<String> listIdProses = (List<String>) request.get("list_id");
+            String produkId = request.get("produk_id").toString();
             Boolean status = Boolean.parseBoolean(request.get("status").toString());
 
             prosesKomponenService.editStatusPengerjaan(status, listIdProses);

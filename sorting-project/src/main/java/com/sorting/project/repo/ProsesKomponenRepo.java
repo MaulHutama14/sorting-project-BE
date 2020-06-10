@@ -28,8 +28,8 @@ public interface ProsesKomponenRepo extends JpaRepository<ProsesKomponen, Intege
     @Query("SELECT tpk FROM ProsesKomponen tpk WHERE tpk.komponen.id=?1 AND tpk.isAktif=1  AND tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 ORDER BY tpk.proses.sortId ASC, tpk.nomor ASC")
     List<ProsesKomponen> findByIdProsesKomponen(String idProses, String orderBy);
 
-    @Query("SELECT DISTINCT tpk.komponen.namaKomponen FROM ProsesKomponen tpk WHERE tpk.isAktif=1 AND tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1" +
-            " ORDER BY tpk.komponen.prioritasNest ASC, tpk.komponen.prioritas ASC, tpk.durasiProses ASC, tpk.komponen.namaKomponen ASC")
+    @Query("SELECT DISTINCT tpk.komponen.id FROM ProsesKomponen tpk WHERE tpk.isAktif=1 AND tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 " +
+            " ORDER BY  tpk.komponen.prioritasNest ASC")
     List<Object[]> findSortByNest ();
 
     @Query("SELECT DISTINCT tpk.komponen.id FROM ProsesKomponen tpk WHERE tpk.isAktif=1 AND tpk.komponen.isAktif=1 AND tpk.komponen.produk.statusProduk=1 " +

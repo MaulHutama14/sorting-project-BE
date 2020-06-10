@@ -55,7 +55,10 @@ public class Produk implements Serializable{
     private Boolean statusProduk;
 
     @Column(name = "STATUS_PENGERJAAN")
-    private Boolean statusPengerjaan;
+    private Integer statusPengerjaan;
+
+    @Column(name = "DESKRIPSI")
+    private String deskripsi;
 
     private String tanggalAkhirStr;
 
@@ -144,11 +147,19 @@ public class Produk implements Serializable{
         this.statusProduk = statusProduk;
     }
 
-    public Boolean getStatusPengerjaan() {
+    public Integer getStatusPengerjaan() {
         return statusPengerjaan;
     }
 
-    public void setStatusPengerjaan(Boolean statusPengerjaan) {
+    public void setStatusPengerjaan(Integer statusPengerjaan) {
         this.statusPengerjaan = statusPengerjaan;
+    }
+
+    public String getDeskripsi() {
+        return deskripsi;
+    }
+
+    public void setDeskripsi(String deskripsi) {
+        this.deskripsi = deskripsi;
     }
 }

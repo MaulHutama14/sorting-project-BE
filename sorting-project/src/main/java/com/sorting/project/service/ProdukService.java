@@ -27,4 +27,9 @@ public class ProdukService {
         this.produkRepo.save(produk);
     }
 
+    @Transactional
+    public void updateStatusProduk (Boolean status, List<String> id) {
+        produkRepo.updateStatusProduk (status,  id);
+    }
+
 }

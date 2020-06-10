@@ -71,9 +71,8 @@ public class ProdukController {
             Produk newProduk = new Produk();
             User user = userService.findOneById("1");
             String deadlineDateStr  = item.get("tanggalProduk").toString();
-            String[] bufferDeadline = deadlineDateStr.split("T");
-            SimpleDateFormat sdf =  new SimpleDateFormat("dd-MM-yyyy hh:mm");
-            Date deadlineDate = sdf.parse(bufferDeadline[0] + " " + bufferDeadline[1]);
+            SimpleDateFormat sdf =  new SimpleDateFormat("yyyy-MM-dd");
+            Date deadlineDate = sdf.parse(deadlineDateStr);
             Integer kuantitas = Integer.parseInt(item.get("kuantitas").toString());
             Boolean status = Boolean.parseBoolean(item.get("statusProduk").toString());
 
@@ -82,6 +81,7 @@ public class ProdukController {
             newProduk.setCreatedBy(user);
             newProduk.setKuantitas(kuantitas);
             newProduk.setStatusProduk(status);
+            newProduk.setStatusPengerjaan(0);
 
             produkService.save(newProduk);
             response.put("message", "Berhasil simpan produk!");
@@ -99,16 +99,56 @@ public class ProdukController {
     }
 
     @RequestMapping("/edit")
-    ResponseEntity<Map<String,Object>> doEdit (@RequestBody Map<String, Object> request) {
+    ResponseEntity<Map<String,Object>> doEditProduk (@RequestBody Map<String, Object> request) {
         List<Produk> produkList;
         Map<String,Object> response = new HashMap<>();
         try {
-            produkList = produkService.findAll();
-            response.put("item",produkList);
+            Map<String,Object> item = (Map<String, Object>) request.get("itemTambah");
+            Produk produk = produkService.findOneById(item.get("id").toString());
+            String deadlineDateStr  = item.get("tanggalProduk").toString();
+            SimpleDateFormat sdf =  new SimpleDateFormat("yyyy-MM-dd");
+            Date deadlineDate = sdf.parse(deadlineDateStr);
+            Integer kuantitas = Integer.parseInt(item.get("kuantitas").toString());
+            String deskripsi = item.get("statusProduk").toString();
+
+
+            produk.setNamaProduk(item.get("namaProduk").toString());
+            produk.setTanggalAkhir(deadlineDate);
+            produk.setKuantitas(kuantitas);
+            produk.setDeskripsi(deskripsi);
+
+            produkService.save(produk);
+            response.put("message", "Berhasil simpan produk!");
             response.put("success", Boolean.TRUE);
+        } catch (DataIntegrityViolationException e) {
+            e.printStackTrace();
+            response.put("message","Produk sudah ada!");
+            response.put("success", Boolean.FALSE);
         } catch (Exception e) {
             e.printStackTrace();
-            response.put("message", "Gagal mengambil data!");
+            response.put("message", "Gagal simpan produk!");
+            response.put("success", Boolean.FALSE);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @RequestMapping("/edit-status-produk")
+    ResponseEntity<Map<String,Object>> doEdit (@RequestBody Map<String, Object> request) {
+        Map<String,Object> response = new HashMap<>();
+
+        try {
+            List<String> listIdProses = (List<String>) request.get("id");
+            Boolean status = Boolean.parseBoolean(request.get("status").toString());
+
+            produkService.updateStatusProduk(status, listIdProses);
+            response.put("message", "Berhasil simpan status produk!");
+            response.put("success", Boolean.TRUE);
+        } catch (NullPointerException e) {
+            response.put("message", "Parameter produk atau status tidak boleh kosong!");
+            response.put("success", Boolean.FALSE);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("message", "Gagal simpan status produk!");
             response.put("success", Boolean.FALSE);
         }
         return new ResponseEntity<>(response, HttpStatus.OK);

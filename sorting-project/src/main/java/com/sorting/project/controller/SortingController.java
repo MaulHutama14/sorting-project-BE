@@ -399,128 +399,127 @@ public class SortingController {
     }
 
     @RequestMapping("/do-nest-sorting")
-    public ResponseEntity<Map<String, Object>> doNestSorting(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<Map<String, Object>> doNestSorting(@RequestBody Map<String, Object> request) throws ParseException {
         Map<String, Object> result = new HashMap<>();
-        List<Map<String, Object>> resource = new ArrayList<>();
-        List<Map<String, Object>> event = new ArrayList<>();
+        List<ProsesKomponen> prosesKomponenList = new ArrayList<>();
+        Boolean success = true;
+        String proses = "SORTING";
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy hh:mm");
+        SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd hh:mm");
+        List<ProsesKomponen> listProsesSave = new ArrayList<>();
+        List<Object[]> itemList = new ArrayList<>();
+        itemList = (List<Object[]>) request.get("single_shift");
+        List<Date[]> tglSingleShift = new ArrayList<>();
+        for (Object item : itemList) {
+            Map<String,Object> itemAdd = (Map<String, Object>) item;
+            Date[] itemToBeAdd = {
+                    sdf2.parse(itemAdd.get("tanggal_mulai").toString() + " 00:00"),
+                    sdf2.parse(itemAdd.get("tanggal_akhir").toString() + " 23:59")
+            };
+            tglSingleShift.add(itemToBeAdd);
+        }
+        List<TanggalLibur> tglLiburList;
+        Date minDate;
         boolean is2shift = true;
-
-           try {
-            List<Object[]> prosesDitarik = this.prosesKomponenService.findSortByNest();
-            List<TanggalLibur> tglLiburList = this.prosesKomponenService.findAllLibur();
-               AppSetting app = appSettingService.findById("DOUBLE_SHIFT");
-               is2shift = app.getAppValue() == "1" ? true : false;
-            Date dt = new Date();
-            Calendar c = Calendar.getInstance();
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm");
-            dt = sdf.parse(request.get("tanggal_mulai").toString() + " " + request.get("jam_mulai").toString());
-            Date temp = new Date();
-               Map<String, Date> waktuProduk = new HashMap<>();
-               for (int z = 0; z < prosesDitarik.size(); z++) {
-                   List<ProsesKomponen> akanDiTarik = this.prosesKomponenService.findByIdProsesKomponen(prosesDitarik.get(z)[0].toString(), "");
-                   for (int j = 0; j < akanDiTarik.size(); j++) {
-                       Long waktuProsesLong = Math.round(akanDiTarik.get(j).getDurasiProses() * akanDiTarik.get(j).getKomponen().getProduk().getKuantitas() * Double.parseDouble("60"));
-                       Integer waktuProses = Integer.parseInt(waktuProsesLong.toString());
-                       if (z == 0 && j == 0){
-
-                           akanDiTarik.get(j).setAssignDate(dt);
-                           akanDiTarik.get(j).setAssignEnd(
-                                   this.dateManipulator.addSeconds(dt, waktuProses));
-
-                           akanDiTarik.set(j,this.checkAssignEndV2(akanDiTarik.get(j),is2shift));
-
-                       } else if (j > 0) {
-                           if (waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()) != null
-                                   && waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()).after(akanDiTarik.get(j - 1).getAssignEnd())) {
-                               dt = waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat());
-                           } else {
-                               dt = akanDiTarik.get(j - 1).getAssignEnd();
-                           }
-
-                           akanDiTarik.get(j).setAssignDate(dt);
-                           akanDiTarik.get(j).setAssignEnd(
-                                   this.dateManipulator.addSeconds(dt, waktuProses));
-
-
-                           Calendar cat = Calendar.getInstance();
-                           cat.setTime(akanDiTarik.get(j).getAssignDate());
-                           Calendar catPembanding = cat;
-                           catPembanding.set(Calendar.AM_PM,Calendar.AM);
-                           catPembanding.set(Calendar.HOUR, 3);
-                           if (this.cekTanggal(tglLiburList, cat.getTime())) {
-
-                               while (this.cekTanggal(tglLiburList, cat.getTime())) {
-                                   cat.add(Calendar.DATE, 1);
-                               }
-                               cat.set(Calendar.AM_PM,Calendar.AM);
-                               cat.set(Calendar.HOUR,8);
-                               cat.set(Calendar.MINUTE,0);
-                               cat.set(Calendar.SECOND,0);
-
-                               akanDiTarik.get(j).setAssignDate(cat.getTime());
-                               akanDiTarik.get(j).setAssignEnd(cat.getTime());
-                               akanDiTarik.get(j).setAssignEnd(
-                                       this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignEnd(), waktuProses));
-                           }
-
-
-                           akanDiTarik.set(j,this.checkAssignEndV2(akanDiTarik.get(j),is2shift));
-
-
-                       } else if (z != 0 && j == 0) {
-                           if (waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()) != null) {
-                               dt = waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat());
-                           } else {
-                               dt = sdf.parse(request.get("tanggal_mulai").toString() + " " + request.get("jam_mulai").toString());
-                           }
-                           akanDiTarik.get(j).setAssignDate(dt);
-                           akanDiTarik.get(j).setAssignEnd(
-                                   this.dateManipulator.addSeconds(dt, waktuProses));
-
-                           Calendar cat = Calendar.getInstance();
-                           cat.setTime(akanDiTarik.get(j).getAssignDate());
-                           Calendar catPembanding = cat;
-                           catPembanding.set(Calendar.AM_PM,Calendar.AM);
-                           catPembanding.set(Calendar.HOUR, 3);
-                           if (this.cekTanggal(tglLiburList, cat.getTime())) {
-
-                               while (this.cekTanggal(tglLiburList, cat.getTime())) {
-                                   cat.add(Calendar.DATE, 1);
-                               }
-
-                               cat.set(Calendar.AM_PM,Calendar.AM);
-                               cat.set(Calendar.HOUR,8);
-                               cat.set(Calendar.MINUTE,0);
-                               cat.set(Calendar.SECOND,0);
-
-                               akanDiTarik.get(j).setAssignDate(cat.getTime());
-                               akanDiTarik.get(j).setAssignEnd(cat.getTime());
-                               akanDiTarik.get(j).setAssignEnd(
-                                       this.dateManipulator.addSeconds(akanDiTarik.get(j).getAssignEnd(), waktuProses));
-                           }
-
-                           akanDiTarik.set(j,this.checkAssignEndV2(akanDiTarik.get(j),is2shift));
-
-                       }
-                       waktuProduk.put(akanDiTarik.get(j).getAlat().getNamaAlat(), akanDiTarik.get(j).getAssignEnd());
-
-
-                   }
-
-                   this.prosesKomponenService.saveAll(akanDiTarik);
-
-               }
-
-               result.put("message", "Berhasil melakukan Nest Sorting!");
+        try {
+            prosesKomponenList = this.prosesKomponenService.findCuttingByDeadlinePriorWaktuJumProsNama();
+            minDate = sdf.parse(appSettingService.findById("MIN_DATE").getAppValue());
+            if (prosesKomponenList.size() == 0) {
+                result.put("message","Tidak ada komponen untuk diproses!");
+                result.put("success", false);
+                return new ResponseEntity<>(result, HttpStatus.OK);
+            }
         } catch (Exception e) {
             e.printStackTrace();
-            result.put("success",false);
-            result.put("message","Gagal melakukan Nest Sorting!");
-            return new ResponseEntity<>(result, HttpStatus.EXPECTATION_FAILED);
+            result.put("message","Gagal mendapatkan komponen untuk diproses!");
+            result.put("success", false);
+            return new ResponseEntity<>(result, HttpStatus.OK);
         }
-        result.put("success", true);
-        return new ResponseEntity<>(result, HttpStatus.OK);
 
+        Date dt = sdf2.parse(request.get("tanggal_mulai").toString() + " " + request.get("jam_mulai").toString());
+
+        if (false) {
+            System.out.println("=================" +
+                    "WAKTU MULAI SORTING MELEWATI BATAS MAKSIMAL");
+            result.put("success",false);
+            result.put("message","Batas maksimal sorting adalah " + sdf.format(minDate));
+            return new ResponseEntity<>(result,HttpStatus.OK);
+        }
+
+
+        List<Object[]> prosesDitarik = this.prosesKomponenService.findSortByNest();
+
+        Map<String, Date> waktuProduk = new HashMap<>();
+        for (int z = 0; z < prosesDitarik.size(); z++) {
+            System.out.println("Progress " + z + " dari " + prosesDitarik.size());
+            List<ProsesKomponen> akanDiTarik = this.prosesKomponenService.findByIdProsesKomponen(prosesDitarik.get(z)[0].toString(), "");
+            for (int j = 0; j < akanDiTarik.size(); j++) {
+
+                Produk produk = akanDiTarik.get(j).getKomponen().getProduk();
+                Long waktuProsesLong = Math.round(akanDiTarik.get(j).getDurasiProses()  * Double.parseDouble("60"));
+                Integer waktuProses = Integer.parseInt(waktuProsesLong.toString());
+                if (z == 0 && j == 0){
+
+                    is2shift = cekDoubleShift(tglSingleShift, dt);
+                    akanDiTarik.get(j).setAssignDate(dt);
+                    akanDiTarik.get(j).setAssignEnd(
+                            this.dateManipulator.addSeconds(dt, waktuProses));
+
+                    akanDiTarik.set(j,this.checkAssignEndV2(akanDiTarik.get(j),is2shift));
+
+                } else if (j > 0) {
+                    int posisi = j - 1;
+                    if (j >= produk.getKuantitas()) {
+                        posisi = j - produk.getKuantitas();
+                    }
+                    if (waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()) != null
+                            && waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()).after(akanDiTarik.get(posisi).getAssignEnd())) {
+                        dt = waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat());
+                    } else {
+                        dt = akanDiTarik.get(posisi).getAssignEnd();
+                    }
+                    is2shift = cekDoubleShift(tglSingleShift, dt);
+                    akanDiTarik.get(j).setAssignDate(dt);
+                    akanDiTarik.get(j).setAssignEnd(
+                            this.dateManipulator.addSeconds(dt, waktuProses));
+
+                    akanDiTarik.set(j,this.checkAssignEndV2(akanDiTarik.get(j),is2shift));
+
+
+                } else if (z != 0 && j == 0) {
+                    if (waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat()) != null) {
+                        dt = waktuProduk.get(akanDiTarik.get(j).getAlat().getNamaAlat());
+                    } else {
+                        dt = sdf2.parse(request.get("tanggal_mulai").toString() + " " + request.get("jam_mulai").toString());
+                    }
+                    is2shift = cekDoubleShift(tglSingleShift, dt);
+                    akanDiTarik.get(j).setAssignDate(dt);
+                    akanDiTarik.get(j).setAssignEnd(
+                            this.dateManipulator.addSeconds(dt, waktuProses));
+
+                    akanDiTarik.set(j,this.checkAssignEndV2(akanDiTarik.get(j),is2shift));
+
+                }
+
+
+                waktuProduk.put(akanDiTarik.get(j).getAlat().getNamaAlat(), akanDiTarik.get(j).getAssignEnd());
+                akanDiTarik.get(j).setSortId(z);
+                listProsesSave.add(akanDiTarik.get(j));
+            }
+
+//            this.prosesKomponenService.saveAll(akanDiTarik);
+
+        }
+        this.prosesKomponenService.saveAll(listProsesSave);
+
+        System.out.println("=====================\n"
+                + "     JOB DONE \n"
+                + "=====================");
+
+//        prosesKomponenService.saveBackUp();
+        result.put("success", success);
+        result.put("message","Sukses melakukan sorting!");
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
     
     @RequestMapping("/getSorting")
