@@ -155,11 +155,11 @@ public class ProsesKomponenService {
     }
     
     public List<ProsesKomponen> findByHasilSorting(Boolean status, String start, String end){
-        return this.prosesKomponenRepo.findByHasilSorting(status, start,  end);
+        return this.prosesKomponenRepo.findByHasilSorting( start,  end);
     };
 
     public List<Object[]> findProdukDistinct(Boolean status, String start, String end){
-        return this.prosesKomponenRepo.findProdukDistinct(status, start,  end);
+        return this.prosesKomponenRepo.findProdukDistinct( start,  end);
     };
 
     public List<ProsesKomponen> findByProduk(String namaProduk) {
